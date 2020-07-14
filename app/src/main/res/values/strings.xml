@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">UniversalSeismicLogger</string>
+    <string name="record_started">Record started!</string>
+    <string name="record_paused">Record paused!</string>
+    <string name="record_aborted">Record aborted!</string>
+    <string name="record_stopped">Record stopped!</string>
+    <string name="record_button_start">Start</string>
+    <string name="record_button_pause">Pause</string>
+    <string name="record_button_continue">Continue</string>
 </resources>
