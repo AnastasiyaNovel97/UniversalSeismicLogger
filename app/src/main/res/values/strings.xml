@@ -7,4 +7,7 @@
     <string name="record_button_start">Start</string>
     <string name="record_button_pause">Pause</string>
     <string name="record_button_continue">Continue</string>
+    <string name="sample_rate">Sample rate</string>
+    <string name="log_record_name">log name</string>
+    <string name="recording_time">Recording time:</string>
 </resources>
