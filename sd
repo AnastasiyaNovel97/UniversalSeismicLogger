@@ -1,0 +1,378 @@
+[1mdiff --git a/app/src/main/java/com/example/universalseismiclogger/RecordingActivity.java b/app/src/main/java/com/example/universalseismiclogger/RecordingActivity.java[m
+[1mindex 4b9d5d4..c6d27c4 100644[m
+[1m--- a/app/src/main/java/com/example/universalseismiclogger/RecordingActivity.java[m
+[1m+++ b/app/src/main/java/com/example/universalseismiclogger/RecordingActivity.java[m
+[36m@@ -3,7 +3,6 @@[m [mpackage com.example.universalseismiclogger;[m
+ import androidx.appcompat.app.AlertDialog;[m
+ import androidx.appcompat.app.AppCompatActivity;[m
+ import androidx.core.app.ActivityCompat;[m
+[31m-import androidx.core.content.ContextCompat;[m
+ [m
+ import android.Manifest;[m
+ import android.content.Context;[m
+[36m@@ -147,36 +146,13 @@[m [mpublic class RecordingActivity extends AppCompatActivity {[m
+             public void onNothingSelected(AdapterView<?> arg0) {[m
+             }[m
+         });[m
+[31m-        //spinnerSampleRate.getSelectedItem();[m
+ [m
+         if (!hasPermissions(this, PERMISSIONS)) {[m
+             ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_ALL);[m
+         }[m
+[31m-//[m
+[31m-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=[m
+[31m-//                PackageManager.PERMISSION_GRANTED) {[m
+[31m-//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)) {[m
+[31m-//                //Do something[m
+[31m-//            } else {[m
+[31m-//                waitForPermission = true;[m
+[31m-//                ActivityCompat.requestPermissions(this,[m
+[31m-//                        new String[]{Manifest.permission.RECORD_AUDIO}, MY_PERMISSIONS_REQUEST_RECORD_AUDIO);[m
+[31m-//            }[m
+[31m-//        } else waitForPermission = false;[m
+[31m-//[m
+[31m-//[m
+[31m-//        while (waitForPermission) {};[m
+[31m-//[m
+[31m-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=[m
+[31m-//                PackageManager.PERMISSION_GRANTED) {[m
+[31m-//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {[m
+[31m-//                //Do something[m
+[31m-//            } else {[m
+[31m-//                ActivityCompat.requestPermissions(this,[m
+[31m-//                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);[m
+[31m-//            }[m
+[31m-//        }[m
+ [m
+[32m+[m[32m        createAudioRecorder();[m
+[32m+[m[32m        Log.d(TAG, "init state = " + audioRecord.getState());[m
+     }[m
+ [m
+ [m
+[36m@@ -343,10 +319,12 @@[m [mpublic class RecordingActivity extends AppCompatActivity {[m
+     public void recordStart(View v) {[m
+ [m
+         Log.d(TAG, "record start");[m
+[31m-        audioRecord.startRecording();[m
+[31m-        int recordingState = audioRecord.getRecordingState();[m
+[31m-        Log.d(TAG, "recordingState = " + recordingState);[m
+[31m-        readStart(v);[m
+[32m+[m[32m        if(audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {[m
+[32m+[m[32m            audioRecord.startRecording();[m
+[32m+[m[32m            int recordingState = audioRecord.getRecordingState();[m
+[32m+[m[32m            Log.d(TAG, "recordingState = " + recordingState);[m
+[32m+[m[32m            readStart(v);[m
+[32m+[m[32m        }[m
+     }[m
+ [m
+     // Stop recording audio[m
+[36m@@ -357,7 +335,9 @@[m [mpublic class RecordingActivity extends AppCompatActivity {[m
+ [m
+     }[m
+ [m
+[32m+[m
+     int readSampleCount = 0;[m
+[32m+[m
+     public void readStart(View v) {[m
+         Log.d(TAG, "read start");[m
+ [m
+[36m@@ -433,299 +413,4 @@[m [mpublic class RecordingActivity extends AppCompatActivity {[m
+     }[m
+ [m
+ [m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-[m
+[31m-    private static class RecordWaveTask extends AsyncTask<File, Void, Object[]> {[m
+[31m-[m
+[31m-        // Configure me![m
+[31m-        private static final int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;[m
+[31m-        private static final int SAMPLE_RATE = 44100; // Hz[m
+[31m-        private static final int ENCODING = AudioFormat.ENCODING_PCM_16BIT;[m
+[31m-        private static final int CHANNEL_MASK = AudioFormat.CHANNEL_IN_MONO;[m
+[31m-        //[m
+[31m-[m
+[31m-        private static final int BUFFER_SIZE = 2 * AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNEL_MASK, ENCODING);[m
+[31m-[m
+[31m-        private Context ctx;[m
+[31m-[m
+[31m-        private RecordWaveTask(Context ctx) {[m
+[31m-            setContext(ctx);[m
+[31m-        }[m
+[31m-[m
+[31m-        private void setContext(Context ctx) {[m
+[31m-            this.ctx = ctx;[m
+[31m-        }[m
+[31m-[m
+[31m-        /**[m
+[31m-         * Opens up the given file, writes the header, and keeps filling it with raw PCM bytes from[m
+[31m-         * AudioRecord until it reaches 4GB or is stopped by the user. It then goes back and updates[m
+[31m-         * the WAV header to include the proper final chunk sizes.[m
+[31m-         *[m
+[31m-         * @param files Index 0 should be the file to write to[m
+[31m-         * @return Either an Exception (error) or two longs, the filesize, elapsed time in ms (success)[m
+[31m-         */[m
+[31m-        @Override[m
+[31m-        protected Object[] doInBackground(File... files) {[m
+[31m-            AudioRecord audioRecord = null;[m
+[31m-            FileOutputStream wavOut = null;[m
+[31m-            long startTime = 0;[m
+[31m-            long endTime = 0;[m
+[31m-[m
+[31m-            try {[m
+[31m-                // Open our two resources[m
+[31m-                audioRecord = new AudioRecord(AUDIO_SOURCE, SAMPLE_RATE, CHANNEL_MASK, ENCODING, BUFFER_SIZE);[m
+[31m-                wavOut = new FileOutputStream(files[0]);[m
+[31m-[m
+[31m-                // Write out the wav file header[m
+[31m-                writeWavHeader(wavOut, CHANNEL_MASK, SAMPLE_RATE, ENCODING);[m
+[31m-[m
+[31m-                // Avoiding loop allocations[m
+[31m-                byte[] buffer = new byte[BUFFER_SIZE];[m
+[31m-                boolean run = true;[m
+[31m-                int read;[m
+[31m-                long total = 0;[m
+[31m-[m
+[31m-                // Let's go[m
+[31m-                startTime = SystemClock.elapsedRealtime();[m
+[31m-                audioRecord.startRecording();[m
+[31m-                while (run && !isCancelled()) {[m
+[31m-                    read = audioRecord.read(buffer, 0, buffer.length);[m
+[31m-[m
+[31m-                    // WAVs cannot be > 4 GB due to the use of 32 bit unsigned integers.[m
+[31m-                    if (total + read > 4294967295L) {[m
+[31m-                        // Write as many bytes as we can before hitting the max size[m
+[31m-                        for (int i = 0; i < read && total <= 4294967295L; i++, total++) {[m
+[31m-                            wavOut.write(buffer[i]);[m
+[31m-                        }[m
+[31m-                        run = false;[m
+[31m-                    } else {[m
+[31m-                        // Write out the entire read buffer[m
+[31m-                        wavOut.write(buffer, 0, read);[m
+[31m-                        total += read;[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            } catch (IOException ex) {[m
+[31m-                return new Object[]{ex};[m
+[31m-            } finally {[m
+[31m-                if (audioRecord != null) {[m
+[31m-                    try {[m
+[31m-                        if (audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {[m
+[31m-                            audioRecord.stop();[m
+[31m-                            endTime = SystemClock.elapsedRealtime();[m
+[31m-                        }[m
+[31m-                    } catch (IllegalStateException ex) {[m
+[31m-                        //[m
+[31m-                    }[m
+[31m-                    if (audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {[m
+[31m-                        audioRecord.release();[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                if (wavOut != null) {[m
+[31m-                    try {[m
+[31m-                        wavOut.close();[m
+[31m-                    } catch (IOException ex) {[m
+[31m-                        //[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-[m
+[31m-            try {[m
+[31m-                // This is not put in the try/catch/finally above since it needs to run[m
+[31m-                // after we close the FileOutputStream[m
+[31m-                updateWavHeader(files[0]);[m
+[31m-            } catch (IOException ex) {[m
+[31m-                return new Object[] { ex };[m
+[31m-            }[m
+[31m-[m
+[31m-            return new Object[] { files[0].length(), endTime - startTime };[m
+[31m-        }[m
+[31m-[m
+[31m-        /**[m
+[31m-         * Writes the proper 44-byte RIFF/WAVE header to/for the given stream[m
+[31m-         * Two size fields are left empty/null since we do not yet know the final stream size[m
+[31m-         *[m
+[31m-         * @param out         The stream to write the header to[m
+[31m-         * @param channelMask An AudioFormat.CHANNEL_* mask[m
+[31m-         * @param sampleRate  The sample rate in hertz[m
+[31m-         * @param encoding    An AudioFormat.ENCODING_PCM_* value[m
+[31m-         * @throws IOException[m
+[31m-         */[m
+[31m-        private static void writeWavHeader(OutputStream out, int channelMask, int sampleRate, int encoding) throws IOException {[m
+[31m-            short channels;[m
+[31m-            switch (channelMask) {[m
+[31m-                case AudioFormat.CHANNEL_IN_MONO:[m
+[31m-                    channels = 1;[m
+[31m-                    break;[m
+[31m-                case AudioFormat.CHANNEL_IN_STEREO:[m
+[31m-                    channels = 2;[m
+[31m-                    break;[m
+[31m-                default:[m
+[31m-                    throw new IllegalArgumentException("Unacceptable channel mask");[m
+[31m-            }[m
+[31m-[m
+[31m-            short bitDepth;[m
+[31m-            switch (encoding) {[m
+[31m-                case AudioFormat.ENCODING_PCM_8BIT:[m
+[31m-                    bitDepth = 8;[m
+[31m-                    break;[m
+[31m-                case AudioFormat.ENCODING_PCM_16BIT:[m
+[31m-                    bitDepth = 16;[m
+[31m-                    break;[m
+[31m-                case AudioFormat.ENCODING_PCM_FLOAT:[m
+[31m-                    bitDepth = 32;[m
+[31m-                    break;[m
+[31m-                default:[m
+[31m-                    throw new IllegalArgumentException("Unacceptable encoding");[m
+[31m-            }[m
+[31m-[m
+[31m-            writeWavHeader(out, channels, sampleRate, bitDepth);[m
+[31m-        }[m
+[31m-[m
+[31m-        /**[m
+[31m-         * Writes the proper 44-byte RIFF/WAVE header to/for the given stream[m
+[31m-         * Two size fields are left empty/null since we do not yet know the final stream size[m
+[31m-         *[m
+[31m-         * @param out        The stream to write the header to[m
+[31m-         * @param channels   The number of channels[m
+[31m-         * @param sampleRate The sample rate in hertz[m
+[31m-         * @param bitDepth   The bit depth[m
+[31m-         * @throws IOException[m
+[31m-         */[m
+[31m-        private static void writeWavHeader(OutputStream out, short channels, int sampleRate, short bitDepth) throws IOException {[m
+[31m-            // Convert the multi-byte integers to raw bytes in little endian format as required by the spec[m
+[31m-            byte[] littleBytes = ByteBuffer[m
+[31m-                    .allocate(14)[m
+[31m-                    .order(ByteOrder.LITTLE_ENDIAN)[m
+[31m-                    .putShort(channels)[m
+[31m-                    .putInt(sampleRate)[m
+[31m-                    .putInt(sampleRate * channels * (bitDepth / 8))[m
+[31m-                    .putShort((short) (channels * (bitDepth / 8)))[m
+[31m-                    .putShort(bitDepth)[m
+[31m-                    .array();[m
+[31m-[m
+[31m-            // Not necessarily the best, but it's very easy to visualize this way[m
+[31m-            out.write(new byte[]{[m
+[31m-                    // RIFF header[m
+[31m-                    'R', 'I', 'F', 'F', // ChunkID[m
+[31m-                    0, 0, 0, 0, // ChunkSize (must be updated later)[m
+[31m-                    'W', 'A', 'V', 'E', // Format[m
+[31m-                    // fmt subchunk[m
+[31m-                    'f', 'm', 't', ' ', // Subchunk1ID[m
+[31m-                    16, 0, 0, 0, // Subchunk1Size[m
+[31m-                    1, 0, // AudioFormat[m
+[31m-                    littleBytes[0], littleBytes[1], // NumChannels[m
+[31m-                    littleBytes[2], littleBytes[3], littleBytes[4], littleBytes[5], // SampleRate[m
+[31m-                    littleBytes[6], littleBytes[7], littleBytes[8], littleBytes[9], // ByteRate[m
+[31m-                    littleBytes[10], littleBytes[11], // BlockAlign[m
+[31m-                    littleBytes[12], littleBytes[13], // BitsPerSample[m
+[31m-                    // data subchunk[m
+[31m-                    'd', 'a', 't', 'a', // Subchunk2ID[m
+[31m-                    0, 0, 0, 0, // Subchunk2Size (must be updated later)[m
+[31m-            });[m
+[31m-        }[m
+[31m-[m
+[31m-        /**[m
+[31m-         * Updates the given wav file's header to include the final chunk sizes[m
+[31m-         *[m
+[31m-         * @param wav The wav file to update[m
+[31m-         * @throws IOException[m
+[31m-         */[m
+[31m-        private static void updateWavHeader(File wav) throws IOException {[m
+[31m-            byte[] sizes = ByteBuffer[m
+[31m-                    .allocate(8)[m
+[31m-                    .order(ByteOrder.LITTLE_ENDIAN)[m
+[31m-                    // There are probably a bunch of different/better ways to calculate[m
+[31m-                    // these two given your circumstances. Cast should be safe since if the WAV is[m
+[31m-                    // > 4 GB we've already made a terrible mistake.[m
+[31m-                    .putInt((int) (wav.length() - 8)) // ChunkSize[m
+[31m-                    .putInt((int) (wav.length() - 44)) // Subchunk2Size[m
+[31m-                    .array();[m
+[31m-[m
+[31m-            RandomAccessFile accessWave = null;[m
+[31m-            //noinspection CaughtExceptionImmediatelyRethrown[m
+[31m-            try {[m
+[31m-                accessWave = new RandomAccessFile(wav, "rw");[m
+[31m-                // ChunkSize[m
+[31m-                accessWave.seek(4);[m
+[31m-                accessWave.write(sizes, 0, 4);[m
+[31m-[m
+[31m-                // Subchunk2Size[m
+[31m-                accessWave.seek(40);[m
+[31m-                accessWave.write(sizes, 4, 4);[m
+[31m-            } catch (IOException ex) {[m
+[31m-                // Rethrow but we still close accessWave in our finally[m
+[31m-                throw ex;[m
+[31m-            } finally {[m
+[31m-                if (accessWave != null) {[m
+[31m-                    try {[m
+[31m-                        accessWave.close();[m
+[31m-                    } catch (IOException ex) {[m
+[31m-                        //[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-[m
+[31m-        @Override[m
+[31m-        protected void onCancelled(Object[] results) {[m
+[31m-            // Handling cancellations and successful runs in the same way[m
+[31m-            onPostExecute(results);[m
+[31m-        }[m
+[31m-[m
+[31m-        @Override[m
+[31m-        protected void onPostExecute(Object[] results) {[m
+[31m-            Throwable throwable = null;[m
+[31m-            if (results[0] instanceof Throwable) {[m
+[31m-                // Error[m
+[31m-                throwable = (Throwable) results[0];[m
+[31m-                Log.e(RecordWaveTask.class.getSimpleName(), throwable.getMessage(), throwable);[m
+[31m-            }[m
+[31m-[m
+[31m-            // If we're attached to an activity[m
+[31m-            if (ctx != null) {[m
+[31m-                if (throwable == null) {[m
+[31m-                    // Display final recording stats[m
+[31m-                    double size = (long) results[0] / 1000000.00;[m
+[31m-                    long time = (long) results[1] / 1000;[m
+[31m-                    Toast.makeText(ctx, String.format(Locale.getDefault(), "%.2f MB / %d seconds",[m
+[31m-                            size, time), Toast.LENGTH_LONG).show();[m
+[31m-                } else {[m
+[31m-                    // Error[m
+[31m-                    Toast.makeText(ctx, throwable.getLocalizedMessage(), Toast.LENGTH_LONG).show();[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+ }[m
