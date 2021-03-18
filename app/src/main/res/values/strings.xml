@@ -1,13 +1,31 @@
 <resources>
     <string name="app_name">UniversalSeismicLogger</string>
+    <string name="debug_tag">MyLogs</string>
     <string name="record_started">Record started!</string>
     <string name="record_paused">Record paused!</string>
     <string name="record_aborted">Record aborted!</string>
     <string name="record_stopped">Record stopped!</string>
     <string name="record_button_start">Start</string>
     <string name="record_button_pause">Pause</string>
+    <string name="record_button_stop">Stop</string>
     <string name="record_button_continue">Continue</string>
     <string name="sample_rate">Sample rate</string>
     <string name="log_record_name">log name</string>
     <string name="recording_time">Recording time:</string>
+    <string name="record_folder_path">Files are stored at path: </string>
+
+    <string name="current_time">Current time: </string>
+    <string name="current_location">Current location: </string>
+
+
+    <string name="switch_use_mic">Use microphone data?</string>
+    <string name="switch_audio_resource">Use UNPROCESSED audio source?</string>
+    <string name="switch_use_gyroscope">Use gyroscope data?</string>
+    <string name="switch_use_accelerometer">Use accelerometer data?</string>
+    <string name="switch_use_compass">Use compass data?</string>
+
+    <string name="file_saved_at_path">File is saved at path:</string>
+    <string name="config_button">Config</string>
+    <string name="back_button">Back</string>
+
 </resources>
