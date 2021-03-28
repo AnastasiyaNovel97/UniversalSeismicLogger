@@ -14,7 +14,7 @@ import static com.example.universalseismiclogger.shared.DefaultStrings.BASE_FOLD
 import static com.example.universalseismiclogger.shared.Extensions.*;
 
 
-public class ConverterPcmToCsv implements IFormatConverter {
+public class ConverterPcmToCsvOld implements IFormatConverter {
 
     private String fileName;
     private Date startDate;
@@ -22,13 +22,13 @@ public class ConverterPcmToCsv implements IFormatConverter {
     private String location;
     private int bufferSize = 1024;
 
-    public ConverterPcmToCsv(String fileName, Date startDate, int sampleRate) {
+    public ConverterPcmToCsvOld(String fileName, Date startDate, int sampleRate) {
         this.fileName = fileName;
         this.startDate = startDate;
         this.sampleRate = sampleRate;
     }
 
-    public ConverterPcmToCsv(String fileName, Date startDate, int sampleRate, String location) {
+    public ConverterPcmToCsvOld(String fileName, Date startDate, int sampleRate, String location) {
         this.fileName = fileName;
         this.startDate = startDate;
         this.sampleRate = sampleRate;

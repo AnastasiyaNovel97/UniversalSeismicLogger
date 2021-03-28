@@ -7,19 +7,19 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
+import com.example.universalseismiclogger.converter.ConverterMicPcmToCsv;
+import com.example.universalseismiclogger.filescanner.FileScanner;
 import com.example.universalseismiclogger.shared.ITraceable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.example.universalseismiclogger.shared.DefaultStrings.BASE_FOLDER_PATH;
-import static com.example.universalseismiclogger.shared.DefaultStrings.MICROPHONE_ID;
-import static com.example.universalseismiclogger.shared.DefaultStrings.SAMPLE_RATE;
-import static com.example.universalseismiclogger.shared.DefaultStrings.UNPROCESSED_MIC;
+import static com.example.universalseismiclogger.shared.DefaultStrings.*;
 import static com.example.universalseismiclogger.shared.Extensions.*;
 import static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;
 
@@ -29,9 +29,10 @@ public class RecorderMicToWav implements IRecorder, ITraceable {
     private static boolean isFileSaved = false;
     private String recordFileName;
     private String recordFilePath;
+    private String recordFullPath;
     private boolean isReading = false;
     private File recordFile;
-    private int myBufferSize = 1024;            // buffer size for audioRecord
+    private int myBufferSize = DATA_BUFFER_SIZE_DEFAULT;            // buffer size for audioRecord
     private int audioSource = MediaRecorder.AudioSource.DEFAULT;
     private AudioRecord audioRecord;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -49,22 +50,27 @@ public class RecorderMicToWav implements IRecorder, ITraceable {
         FileOutputStream os = null;
         try {
             os = new FileOutputStream(recordFilePath + recordFileName + PCM_EXTENSION);
+            try {
+                os.write(ByteBuffer.allocate(4).putInt(1).array());
+                int read = 0;
+                if (null != os) {
+                    os.write(data);
+                    while (isReading) {
+                        read = audioRecord.read(data, 0, myBufferSize);
+                        if (read > 0) {
+                        }
 
-            int read = 0;
-            if (null != os) {
-                while (isReading) {
-                    read = audioRecord.read(data, 0, myBufferSize);
-                    if (read > 0) {
-                    }
-
-                    if (AudioRecord.ERROR_INVALID_OPERATION != read) {
-                        try {
-                            os.write(data);
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        if (AudioRecord.ERROR_INVALID_OPERATION != read) {
+                            try {
+                                os.write(data);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
                         }
                     }
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -90,7 +96,7 @@ public class RecorderMicToWav implements IRecorder, ITraceable {
 
     public RecorderMicToWav(Context activityContext, int sampleRate, boolean isUnprocessed){
         parentContext = activityContext;
-        if (isUnprocessed) audioSource = MediaRecorder.AudioSource.UNPROCESSED;
+        if (isUnprocessed) {audioSource = MediaRecorder.AudioSource.UNPROCESSED;}
         int channelConfig = AudioFormat.CHANNEL_IN_MONO;
         int audioFormat = AudioFormat.ENCODING_PCM_16BIT;
         int minInternalBufferSize = AudioRecord.getMinBufferSize(sampleRate,
@@ -141,10 +147,11 @@ public class RecorderMicToWav implements IRecorder, ITraceable {
     @Override
     public void startRecorder(String fileName) {
         recordFileName = fileName + "_mic";
-        recordFilePath = BASE_FOLDER_PATH + recordFileName +"/";
+        recordFilePath = BASE_FOLDER_PATH + fileName +"/";
+        recordFullPath = recordFilePath + recordFileName + PCM_EXTENSION;
         File recordDir = new File(recordFilePath);
         recordDir.mkdirs();
-        Log.d(MY_LOGS, "record start");
+        Log.d(MY_LOGS, "mic record start");
         if(audioRecord.getState() == AudioRecord.STATE_INITIALIZED) {
             audioRecord.startRecording();
             int recordingState = audioRecord.getRecordingState();
@@ -159,7 +166,7 @@ public class RecorderMicToWav implements IRecorder, ITraceable {
 
     @Override
     public void stopRecorder() {
-        Log.d(MY_LOGS, "record stop");
+        Log.d(MY_LOGS, "mic record stop");
         audioRecord.stop();
 
         if (null != audioRecord) {
@@ -175,10 +182,12 @@ public class RecorderMicToWav implements IRecorder, ITraceable {
         (new WavGenerator(audioRecord, myBufferSize))
                 .copyPcmToWav(recordFilePath + recordFileName + PCM_EXTENSION,
                         recordFilePath + recordFileName + WAV_EXTENSION);
+
+
     }
 
     @Override
-    public String getFilePath() {return recordFileName;}
+    public String getFilePath() {return recordFullPath;}
 
     @Override
     public int getSampleRate() {
