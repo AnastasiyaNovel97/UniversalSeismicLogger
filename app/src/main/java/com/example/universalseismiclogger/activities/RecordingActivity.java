@@ -30,7 +30,7 @@ import java.util.concurrent.Executors;
 
 import static android.os.SystemClock.*;
 
-import com.example.universalseismiclogger.converter.ConverterPcmToCsv;
+import com.example.universalseismiclogger.converter.ConverterMicPcmToCsv;
 import com.example.universalseismiclogger.filescanner.FileScanner;
 import com.example.universalseismiclogger.locationprovider.GpsLocationProvider;
 import com.example.universalseismiclogger.permissions.PermissionRequester;
@@ -38,11 +38,7 @@ import com.example.universalseismiclogger.recorder.RecorderManager;
 import com.example.universalseismiclogger.shared.ITraceable;
 import com.instacart.library.truetime.TrueTime;
 
-import static com.example.universalseismiclogger.shared.DefaultStrings.BASE_FOLDER_PATH;
-import static com.example.universalseismiclogger.shared.DefaultStrings.GPS_LOCATION;
-import static com.example.universalseismiclogger.shared.DefaultStrings.GPS_LOCATION_DEFAULT;
-import static com.example.universalseismiclogger.shared.DefaultStrings.LOG_NAME;
-import static com.example.universalseismiclogger.shared.DefaultStrings.RECORDER_CONFIG;
+import static com.example.universalseismiclogger.shared.DefaultStrings.*;
 import static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;
 
 public class RecordingActivity extends AppCompatActivity implements ITraceable {
@@ -91,6 +87,12 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         initGpsLocationProvider();
 
         getGpsLocation();
+
+        initRecorderManager();
+    }
+
+    private void initRecorderManager() {
+        recorderManager = (RecorderManager) new RecorderManager().init(this, recorderConfig);
     }
 
     private void initTrueTime(){
@@ -140,7 +142,6 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     }
 
 
-
 //    private void InitRecorderMicToWav() {
 //        int sampleRate = 8000;
 //        try {
@@ -154,11 +155,6 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 //        recorderMicToWav = new RecorderMicToWav(this, sampleRate, isUnprocessed);
 //    }
 
-//        private void InitRecorderConfig(){
-//        SharedPreferences recorderConfig = getSharedPreferences(RECORDER_CONFIG, MODE_PRIVATE);
-//        RecorderConfiguration recorderConfiguration = RecorderConfiguration.getInstance();
-//        recorderConfiguration.InitConfiguration(this, recorderConfig);
-//    }
 
     private void InitRecorderManager(){
         recorderManager.init(this, recorderConfig);
@@ -211,10 +207,10 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         if (TrueTime.isInitialized())
             dateNow = TrueTime.now();
         else dateNow = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH-mm-ss", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("yy_MM_dd_HH-mm-ss", Locale.getDefault());
         String currentDateAndTime = sdf.format(dateNow);
         //EditText editTextName = (EditText) RecordingActivity.this.findViewById(R.id.editTextLogName);
-        String recordFileName = recorderConfig.getString(LOG_NAME,"Rec")+ "_" + currentDateAndTime;
+        String recordFileName = recorderConfig.getString(LOG_NAME, LOG_NAME_DEFAULT)+ "_" + currentDateAndTime;
 
         buttonRec.setEnabled(false);
         buttonStop.setEnabled(true);
@@ -224,6 +220,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         customHandler.post(updateTimerThread);
 
         Toast.makeText(this, R.string.record_started, Toast.LENGTH_SHORT).show();
+        recorderManager.SetDate(dateNow);
         recorderManager.startRecorder(recordFileName);
         //wavRecorder = new TestWavRecorder(Environment.getExternalStorageDirectory()
         // + "/UniversalSeismicLogger/"+recordFileName);
@@ -252,20 +249,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         Toast.makeText(this, fileSavedAtPath + " " + BASE_FOLDER_PATH
                 + recorderManager.getFilePath() + "/", Toast.LENGTH_LONG).show();
 
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-        executorService.submit(new Runnable() {
-            @Override
-            public void run() {
-                ConverterPcmToCsv converterPcmToCsv = new ConverterPcmToCsv(recorderManager.getFilePath(),
-                        dateNow, recorderManager.getSampleRate());
-                converterPcmToCsv.Convert();
-
-                //Execute file scan to detect files in mtp
-                (new FileScanner()).scan(getBaseContext(),
-                        BASE_FOLDER_PATH + recorderManager.getFilePath()+"/");
-            }
-        });
 
 
     }
@@ -276,10 +260,12 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         public void run() {
             if(TrueTime.isInitialized()) {
                 dateNow = TrueTime.now();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
-                String currentDateAndTime = sdf.format(dateNow);
-                textViewCurrentTime.setText(getString(R.string.current_time)+currentDateAndTime);
             }
+            else dateNow = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault());
+            String currentDateAndTime = sdf.format(dateNow);
+            textViewCurrentTime.setText(getString(R.string.current_time)+currentDateAndTime);
+
             customHandler.postDelayed(this, 100);
         }
     };
@@ -307,6 +293,14 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
             customHandler.postDelayed(this, 50);
         }
     };
+
+    @Override
+    protected void onPause(){
+        if(isRecording){
+            onStopClick(new View(this));
+        }
+        super.onPause();
+    }
 
     @Override
     protected void onResume(){
