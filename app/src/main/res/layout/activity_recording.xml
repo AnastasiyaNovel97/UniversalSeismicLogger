@@ -19,11 +19,10 @@
 
         <Button
             android:id="@+id/button_config"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="onConfigClick"
-            android:text="@string/config_button" />
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:background="@drawable/settings"
+            android:onClick="onConfigClick" />
 
         <Space
             android:layout_width="1dp"
@@ -121,14 +120,14 @@
         android:orientation="horizontal">
 
         <Space
-            android:layout_width="50dp"
-            android:layout_height="wrap_content" />
+            android:layout_width="104dp"
+            android:layout_height="match_parent" />
 
         <Button
             android:id="@+id/buttonRecord"
-            android:layout_width="wrap_content"
-            android:layout_height="100dp"
-            android:layout_weight="1"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:background="@drawable/play"
             android:onClick="onRecordClick"
             android:rotation="0"
             android:rotationX="0"
@@ -136,14 +135,14 @@
             android:text="@string/record_button_start" />
 
         <Space
-            android:layout_width="50dp"
+            android:layout_width="87dp"
             android:layout_height="50dp" />
 
         <Button
             android:id="@+id/buttonStop"
-            android:layout_width="wrap_content"
-            android:layout_height="100dp"
-            android:layout_weight="1"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:background="@drawable/stop"
             android:onClick="onStopClick"
             android:text="@string/record_button_stop" />
 
