@@ -7,6 +7,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
+import com.example.universalseismiclogger.recorder.WavGenerator;
 import com.example.universalseismiclogger.recorder.interfaces.IRecorder;
 import com.example.universalseismiclogger.recorder.interfaces.IRecorderReceiver;
 import com.example.universalseismiclogger.shared.ITraceable;
@@ -82,10 +83,11 @@ public class RecorderMic implements IRecorder, ITraceable {
         finally {
             try {
                 os.close();
-                isFileSaved = true;
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            isFileSaved = true;
             File checkFile = new File(recordFilePath + recordFileName + PCM_EXTENSION);
             Log.d(MY_LOGS, "writeAudioDataToFile record File("+ recordFilePath + recordFileName
                     + PCM_EXTENSION +") length(): " + checkFile.length());
@@ -163,7 +165,9 @@ public class RecorderMic implements IRecorder, ITraceable {
             int recordingState = audioRecord.getRecordingState();
             Log.d(MY_LOGS, "recordingState = " + recordingState);
             isReading = true;
-            executorService.submit(recordingTask);
+            isFileSaved = false;
+            //executorService.submit(recordingTask);
+            executorService.execute(recordingTask);
         }
         else {
             trace("AudioRecord is not initialized!!!");
@@ -174,16 +178,18 @@ public class RecorderMic implements IRecorder, ITraceable {
     public void stopRecorder() {
         Log.d(MY_LOGS, "mic record stop");
         audioRecord.stop();
-
+        isReading = false;
         if (null != audioRecord) {
             isReading = false;
 
             if (audioRecord.getState() == 1)
                 audioRecord.stop();
-            //audioRecord.release();
+            audioRecord.release();
         }
 
-        while(!isFileSaved) { }
+        while(!isFileSaved) {
+
+        }
 
         (new WavGenerator(audioRecord, myBufferSize))
                 .copyPcmToWav(recordFilePath + recordFileName + PCM_EXTENSION,

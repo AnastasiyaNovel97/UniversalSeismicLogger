@@ -220,6 +220,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         customHandler.post(updateTimerThread);
 
         Toast.makeText(this, R.string.record_started, Toast.LENGTH_SHORT).show();
+        InitRecorderManager();
         recorderManager.SetDate(dateNow);
         recorderManager.startRecorder(recordFileName);
         //wavRecorder = new TestWavRecorder(Environment.getExternalStorageDirectory()
@@ -248,9 +249,6 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         //Toast.makeText(this, fileSavedAtPath, Toast.LENGTH_SHORT).show();
         Toast.makeText(this, fileSavedAtPath + " " + BASE_FOLDER_PATH
                 + recorderManager.getFilePath() + "/", Toast.LENGTH_LONG).show();
-
-
-
 
     }
 

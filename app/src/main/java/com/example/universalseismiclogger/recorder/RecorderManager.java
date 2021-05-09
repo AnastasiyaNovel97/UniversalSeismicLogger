@@ -120,7 +120,9 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
                             micCsvPath = converterPcmToCsv.Convert();
                         }
                     });
-                    while (micCsvPath == null){;}
+                    while (micCsvPath == null){
+                        ;
+                    }
                     csvFiles.add(new CsvFile(new FileInputStream(micCsvPath)));
                 }
                 else {
