@@ -7,7 +7,6 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
 
-import com.example.universalseismiclogger.recorder.WavGenerator;
 import com.example.universalseismiclogger.recorder.interfaces.IRecorder;
 import com.example.universalseismiclogger.recorder.interfaces.IRecorderReceiver;
 import com.example.universalseismiclogger.shared.ITraceable;
@@ -26,11 +25,11 @@ import static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;
 public class RecorderMic implements IRecorder, ITraceable {
 
     private Context parentContext;
-    private static boolean isFileSaved = false;
+    private volatile boolean isFileSaved = false;
     private String recordFileName;
     private String recordFilePath;
     private String recordFullPath;
-    private boolean isReading = false;
+    private volatile boolean isReading = false;
     private File recordFile;
     private int samplesRead;
     private int recorderId;
@@ -38,6 +37,7 @@ public class RecorderMic implements IRecorder, ITraceable {
     private int audioSource = MediaRecorder.AudioSource.DEFAULT;
     private AudioRecord audioRecord;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private FileOutputStream fOutputStream = null;
 
     private IRecorderReceiver recorderReceiver;
 
@@ -51,14 +51,14 @@ public class RecorderMic implements IRecorder, ITraceable {
     private void writeAudioDataToFile() {
         byte data[] = new byte[myBufferSize];
         isFileSaved = false;
-        FileOutputStream os = null;
+        fOutputStream = null;
         try {
-            os = new FileOutputStream(recordFilePath + recordFileName + PCM_EXTENSION);
+            fOutputStream = new FileOutputStream(recordFilePath + recordFileName + PCM_EXTENSION);
             try {
                 //os.write(ByteBuffer.allocate(4).putInt(1).array());
                 int read = 0;
-                if (null != os) {
-                    os.write(data);
+                if (null != fOutputStream) {
+                    fOutputStream.write(data);
                     while (isReading) {
                         read = audioRecord.read(data, 0, myBufferSize);
                         if (read > 0) {
@@ -67,7 +67,7 @@ public class RecorderMic implements IRecorder, ITraceable {
 
                         if (AudioRecord.ERROR_INVALID_OPERATION != read) {
                             try {
-                                os.write(data);
+                                fOutputStream.write(data);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
@@ -82,7 +82,7 @@ public class RecorderMic implements IRecorder, ITraceable {
         }
         finally {
             try {
-                os.close();
+                fOutputStream.close();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -92,6 +92,19 @@ public class RecorderMic implements IRecorder, ITraceable {
             Log.d(MY_LOGS, "writeAudioDataToFile record File("+ recordFilePath + recordFileName
                     + PCM_EXTENSION +") length(): " + checkFile.length());
         }
+    }
+
+    private void stopWriteAudioDataToFile(){
+        try {
+            fOutputStream.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        isFileSaved = true;
+        File checkFile = new File(recordFilePath + recordFileName + PCM_EXTENSION);
+        Log.d(MY_LOGS, "writeAudioDataToFile record File("+ recordFilePath + recordFileName
+                + PCM_EXTENSION +") length(): " + checkFile.length());
     }
 
     public RecorderMic(){};
@@ -177,18 +190,31 @@ public class RecorderMic implements IRecorder, ITraceable {
     @Override
     public void stopRecorder() {
         Log.d(MY_LOGS, "mic record stop");
-        audioRecord.stop();
+        //audioRecord.stop();
         isReading = false;
+
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        stopWriteAudioDataToFile();
+
+        boolean isfs = false;
+        while(this.isFileSaved == false) {
+            isfs = isFileSaved;
+        }
+//        while(!isFileSaved) {
+//
+//        }
+
         if (null != audioRecord) {
             isReading = false;
 
             if (audioRecord.getState() == 1)
                 audioRecord.stop();
             audioRecord.release();
-        }
-
-        while(!isFileSaved) {
-
         }
 
         (new WavGenerator(audioRecord, myBufferSize))

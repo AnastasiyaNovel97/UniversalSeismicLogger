@@ -166,6 +166,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         buttonStop = (Button) findViewById(R.id.buttonStop);
         buttonStop.setEnabled(false);
+        buttonStop.setVisibility(View.INVISIBLE);
 
         textViewRec = (TextView) findViewById(R.id.textViewChronometer);
         textViewCurrentTime = (TextView) findViewById(R.id.textViewCurrentTime);
@@ -212,7 +213,9 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         //EditText editTextName = (EditText) RecordingActivity.this.findViewById(R.id.editTextLogName);
         String recordFileName = recorderConfig.getString(LOG_NAME, LOG_NAME_DEFAULT)+ "_" + currentDateAndTime;
 
+        buttonRec.setVisibility(View.INVISIBLE);
         buttonRec.setEnabled(false);
+        buttonStop.setVisibility(View.VISIBLE);
         buttonStop.setEnabled(true);
 
 
@@ -239,7 +242,9 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         recorderManager.stopRecorder();
 
         buttonRec.setEnabled(true);
+        buttonRec.setVisibility(View.VISIBLE);
         buttonStop.setEnabled(false);
+        buttonStop.setVisibility(View.INVISIBLE);
 
         Toast.makeText(this,
                 recorderConfig.getString(GPS_LOCATION, GPS_LOCATION_DEFAULT),

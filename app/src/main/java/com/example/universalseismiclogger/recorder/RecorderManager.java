@@ -37,7 +37,7 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
     private Context activityContext;
     private SharedPreferences settings;
     private boolean isReading;
-    String micCsvPath = null;
+    private volatile String micCsvPath = null;
 
     public void SetDate(Date dateNow){
         dateStart = dateNow;
@@ -49,12 +49,19 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
 
     @Override
     public IRecorder init(Context activityContext, SharedPreferences settings, int id) {
-        int idRecorder = 0;
+
         sampleRate = settings.getInt(SAMPLE_RATE, SAMPLE_RATE_DEFAULT);
 
         this.activityContext = activityContext;
         this.settings = settings;
 
+        initRecorders();
+
+        return this;
+    }
+
+    private void initRecorders(){
+        int idRecorder = 0;
         dataRecorders = new Vector<>();
 
         if(settings.getBoolean(USE_MIC, false)){
@@ -72,7 +79,6 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
         if(settings.getBoolean(USE_COMPASS, false)){
             dataRecorders.add((new RecorderOrientationSensors(COMPASS_ID)).init(activityContext, settings, idRecorder++));
         }
-        return this;
     }
 
     private String generateOutFilePath(String fileName){
@@ -85,7 +91,7 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
 
     @Override
     public void startRecorder(String fileName) {
-
+        initRecorders();
         isReading = true;
         String outPath = generateOutFilePath(fileName);
         for (IRecorder recorder :
@@ -120,8 +126,16 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
                             micCsvPath = converterPcmToCsv.Convert();
                         }
                     });
+
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    String micCP = null;
                     while (micCsvPath == null){
-                        ;
+                        micCP = micCsvPath;
                     }
                     csvFiles.add(new CsvFile(new FileInputStream(micCsvPath)));
                 }
