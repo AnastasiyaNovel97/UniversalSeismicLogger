@@ -1,0 +1,527 @@
+Index: app/src/main/java/com/example/universalseismiclogger/recorder/RecorderManager.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.universalseismiclogger.recorder;\r\n\r\nimport android.content.Context;\r\nimport android.content.SharedPreferences;\r\nimport android.util.Log;\r\n\r\nimport com.example.universalseismiclogger.converter.ConverterMicPcmToCsv;\r\nimport com.example.universalseismiclogger.converter.ConverterOrientationPcmToCsv;\r\nimport com.example.universalseismiclogger.csvparcer.CsvFile;\r\nimport com.example.universalseismiclogger.csvparcer.CsvMerger;\r\nimport com.example.universalseismiclogger.filescanner.FileScanner;\r\nimport com.example.universalseismiclogger.recorder.interfaces.IRecorder;\r\nimport com.example.universalseismiclogger.recorder.interfaces.IRecorderReceiver;\r\n\r\nimport java.io.FileInputStream;\r\nimport java.io.FileNotFoundException;\r\nimport java.io.IOException;\r\nimport java.util.Date;\r\nimport java.util.List;\r\nimport java.util.Vector;\r\nimport java.util.concurrent.ExecutorService;\r\nimport java.util.concurrent.Executors;\r\n\r\nimport static com.example.universalseismiclogger.shared.DefaultStrings.*;\r\nimport static com.example.universalseismiclogger.shared.Extensions.CSV_EXTENSION;\r\nimport static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;\r\n\r\npublic class RecorderManager implements IRecorder, IRecorderReceiver {\r\n\r\n    private Vector<IRecorder> dataRecorders = new Vector<>();\r\n    private String outFilePath;\r\n    private int sampleRate;\r\n    private String recordFileName;\r\n    private String recordFolderPath;\r\n    private String recordFullPath;\r\n    private Date dateStart;\r\n    private Context activityContext;\r\n    private SharedPreferences settings;\r\n    private boolean isReading;\r\n    private volatile String micCsvPath = null;\r\n\r\n    public void SetDate(Date dateNow){\r\n        dateStart = dateNow;\r\n    }\r\n\r\n    public IRecorder init(Context activityContext, SharedPreferences settings){\r\n        return init(activityContext,settings,0);\r\n    }\r\n\r\n    @Override\r\n    public IRecorder init(Context activityContext, SharedPreferences settings, int id) {\r\n\r\n        sampleRate = settings.getInt(SAMPLE_RATE, SAMPLE_RATE_DEFAULT);\r\n\r\n        this.activityContext = activityContext;\r\n        this.settings = settings;\r\n\r\n        initRecorders();\r\n\r\n        return this;\r\n    }\r\n\r\n    private void initRecorders(){\r\n        int idRecorder = 0;\r\n        dataRecorders = new Vector<>();\r\n\r\n        if(settings.getBoolean(USE_MIC, false)){\r\n            dataRecorders.add((new RecorderMic()).init(activityContext, settings, idRecorder++));\r\n        }\r\n\r\n        if(settings.getBoolean(USE_GYROSCOPE, false)){\r\n            dataRecorders.add((new RecorderOrientationSensors(GYROSCOPE_ID)).init(activityContext, settings, idRecorder++));\r\n        }\r\n\r\n        if(settings.getBoolean(USE_ACCELEROMETER, false)){\r\n            dataRecorders.add((new RecorderOrientationSensors(ACCELEROMETER_ID)).init(activityContext, settings, idRecorder++));\r\n        }\r\n\r\n        if(settings.getBoolean(USE_COMPASS, false)){\r\n            dataRecorders.add((new RecorderOrientationSensors(COMPASS_ID)).init(activityContext, settings, idRecorder++));\r\n        }\r\n    }\r\n\r\n    private String generateOutFilePath(String fileName){\r\n        recordFileName = fileName + \"_all\"+ MANAGER_ID;\r\n        recordFolderPath = BASE_FOLDER_PATH + fileName +\"/\";\r\n        recordFullPath = recordFolderPath + recordFileName + CSV_EXTENSION;\r\n        return recordFullPath;\r\n    }\r\n\r\n\r\n    @Override\r\n    public void startRecorder(String fileName) {\r\n        initRecorders();\r\n        isReading = true;\r\n        String outPath = generateOutFilePath(fileName);\r\n        for (IRecorder recorder :\r\n                dataRecorders) {\r\n            try {\r\n                recorder.startRecorder(fileName);\r\n            } catch (IOException e) {\r\n                e.printStackTrace();\r\n            }\r\n        }\r\n        int a = 0;\r\n    }\r\n\r\n    @Override\r\n    public void stopRecorder() {\r\n        isReading = false;\r\n        Vector<CsvFile> csvFiles = new Vector<>();\r\n        for (IRecorder recorder :\r\n                dataRecorders) {\r\n            try {\r\n                recorder.stopRecorder();\r\n\r\n                ExecutorService executorService = Executors.newSingleThreadExecutor();\r\n                if(recorder.getRecorderType() == MICROPHONE_ID) {\r\n                    micCsvPath = null;\r\n                    executorService.submit(new Runnable() {\r\n                        @Override\r\n                        public void run() {\r\n                            ConverterMicPcmToCsv converterPcmToCsv = new ConverterMicPcmToCsv(recorder.getFilePath(),\r\n                                    dateStart, sampleRate, settings.getString(GPS_LOCATION, GPS_LOCATION_DEFAULT));\r\n\r\n                            micCsvPath = converterPcmToCsv.Convert();\r\n                        }\r\n                    });\r\n\r\n                    try {\r\n                        Thread.sleep(50);\r\n                    } catch (InterruptedException e) {\r\n                        e.printStackTrace();\r\n                    }\r\n\r\n                    String micCP = null;\r\n                    while (micCsvPath == null){\r\n                        micCP = micCsvPath;\r\n                    }\r\n                    csvFiles.add(new CsvFile(new FileInputStream(micCsvPath)));\r\n                }\r\n                else {\r\n                    csvFiles.add(new CsvFile(new FileInputStream(recorder.getFilePath())));\r\n//                    executorService.submit(new Runnable() {\r\n//                        @Override\r\n//                        public void run() {\r\n//                            ConverterOrientationPcmToCsv converterPcmToCsv = new ConverterOrientationPcmToCsv(activityContext, settings);\r\n//\r\n//                            converterPcmToCsv.Convert(recorder.getFilePath(), dateStart,DATA_VALUES_NAMES[recorder.getRecorderType()]);\r\n//                        }\r\n//                    });\r\n                }\r\n//                //Execute file scan to detect files in mtp\r\n//                (new FileScanner()).scan(activityContext, recordFolderPath);\r\n\r\n            } catch (IOException e) {\r\n                e.printStackTrace();\r\n            }\r\n        }\r\n        ExecutorService executorService = Executors.newSingleThreadExecutor();\r\n        executorService.submit(new Runnable() {\r\n            @Override\r\n            public void run() {\r\n                String mergedCsvPath = (new CsvMerger(csvFiles)).Merge(recordFolderPath + recordFileName);\r\n            }\r\n        });\r\n        //Execute file scan to detect files in mtp\r\n        (new FileScanner()).scan(activityContext, recordFolderPath);\r\n        Log.d(MY_LOGS, \"recorders stopped.\");\r\n    }\r\n\r\n    private void generateOutputFile(){\r\n\r\n    }\r\n\r\n    @Override\r\n    public String getFilePath() {\r\n        return recordFullPath;\r\n    }\r\n\r\n    @Override\r\n    public int getSampleRate() {\r\n        return sampleRate;\r\n    }\r\n\r\n    @Override\r\n    public int getRecorderType() {\r\n        return MANAGER_ID;\r\n    }\r\n\r\n    @Override\r\n    public void Update(int recorderId, float[] data) {\r\n\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/recorder/RecorderManager.java	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/src/main/java/com/example/universalseismiclogger/recorder/RecorderManager.java	(date 1620842857370)
+@@ -5,7 +5,7 @@
+ import android.util.Log;
+ 
+ import com.example.universalseismiclogger.converter.ConverterMicPcmToCsv;
+-import com.example.universalseismiclogger.converter.ConverterOrientationPcmToCsv;
++import com.example.universalseismiclogger.converter.ConverterSensorsToSeismic;
+ import com.example.universalseismiclogger.csvparcer.CsvFile;
+ import com.example.universalseismiclogger.csvparcer.CsvMerger;
+ import com.example.universalseismiclogger.filescanner.FileScanner;
+@@ -38,6 +38,10 @@
+     private SharedPreferences settings;
+     private boolean isReading;
+     private volatile String micCsvPath = null;
++    private volatile String mergedCsvPath = null;
++    private volatile Boolean isAllWorkEnds = false;
++
++
+ 
+     public void SetDate(Date dateNow){
+         dateStart = dateNow;
+@@ -102,11 +106,13 @@
+                 e.printStackTrace();
+             }
+         }
+-        int a = 0;
++        isAllWorkEnds = true;
++
+     }
+ 
+     @Override
+     public void stopRecorder() {
++        isAllWorkEnds = false;
+         isReading = false;
+         Vector<CsvFile> csvFiles = new Vector<>();
+         for (IRecorder recorder :
+@@ -157,15 +163,31 @@
+                 e.printStackTrace();
+             }
+         }
++        mergedCsvPath = null;
+         ExecutorService executorService = Executors.newSingleThreadExecutor();
+         executorService.submit(new Runnable() {
+             @Override
+             public void run() {
+-                String mergedCsvPath = (new CsvMerger(csvFiles)).Merge(recordFolderPath + recordFileName);
+-            }
+-        });
+-        //Execute file scan to detect files in mtp
+-        (new FileScanner()).scan(activityContext, recordFolderPath);
++                List<String[]> mergedFile = (new CsvMerger(csvFiles)).Merge(recordFolderPath + recordFileName);
++                try {
++                    ConverterSensorsToSeismic seismicConverter = new ConverterSensorsToSeismic(mergedFile,activityContext);
++                    seismicConverter.Convert(recordFolderPath,recordFileName);
++                } catch (FileNotFoundException e) {
++                    e.printStackTrace();
++                }
++                isAllWorkEnds = true;
++            }
++        });
++
++        executorService.execute(new Runnable() {
++            @Override
++            public void run() {
++                while (!isAllWorkEnds){;}
++                //Execute file scan to detect files in mtp
++                (new FileScanner()).scan(activityContext, recordFolderPath);
++            }
++        });
++
+         Log.d(MY_LOGS, "recorders stopped.");
+     }
+ 
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    package=\"com.example.universalseismiclogger\">\r\n\r\n    <uses-permission android:name=\"android.permission.RECORD_AUDIO\" />\r\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\r\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\r\n\r\n    <application\r\n        android:allowBackup=\"true\"\r\n        android:icon=\"@mipmap/ic_launcher\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/ic_launcher_round\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/AppTheme\">\r\n        <activity\r\n            android:name=\".activities.RecordingActivity\"\r\n            android:screenOrientation=\"portrait\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n        </activity>\r\n\r\n\r\n        <activity android:name=\".activities.ConfigActivity\" />\r\n\r\n    </application>\r\n\r\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/src/main/AndroidManifest.xml	(date 1620576423076)
+@@ -1,12 +1,15 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:tools="http://schemas.android.com/tools"
+     package="com.example.universalseismiclogger">
+ 
+     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
++        tools:ignore="ScopedStorage" />
+     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+ 
+     <application
++        android:requestLegacyExternalStorage="true"
+         android:allowBackup="true"
+         android:icon="@mipmap/ic_launcher"
+         android:label="@string/app_name"
+Index: app/src/main/java/com/example/universalseismiclogger/csvparcer/CsvMerger.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.universalseismiclogger.csvparcer;\r\n\r\nimport java.io.File;\r\nimport java.io.FileNotFoundException;\r\nimport java.io.FileOutputStream;\r\nimport java.io.IOException;\r\nimport java.util.ArrayList;\r\nimport java.util.List;\r\nimport java.util.Vector;\r\n\r\nimport static com.example.universalseismiclogger.shared.Extensions.CSV_EXTENSION;\r\n\r\npublic class CsvMerger {\r\n\r\n    private Vector<CsvFile> fileList;\r\n\r\n    public CsvMerger(Vector<CsvFile> fileList){\r\n        this.fileList = fileList;\r\n    }\r\n\r\n    public String Merge(String folderPath) {\r\n        List<List<String[]>> readCsvList = new ArrayList<>();\r\n        int resListLength = 1;\r\n\r\n        FileOutputStream dataOutputStream = null;\r\n        try {\r\n            dataOutputStream = new FileOutputStream(folderPath + \"_sum\" + CSV_EXTENSION);\r\n        } catch (FileNotFoundException e) {\r\n            e.printStackTrace();\r\n        }\r\n        for (CsvFile csvFile : fileList) {\r\n            List<String[]> oneCsv = csvFile.read();\r\n            readCsvList.add(oneCsv);\r\n            resListLength += oneCsv.size() - 1;\r\n        }\r\n\r\n        List<String[]> resultCsvFile = new ArrayList<>();\r\n        int[] addIndex = new int[readCsvList.size()];\r\n\r\n        boolean firstLine = true;\r\n        for (String[] csvLine :\r\n                readCsvList.get(0)) {\r\n            String currLine = \"\";\r\n            for (String csvLineString :\r\n                    csvLine) {\r\n                currLine += csvLineString.replace(\"\\n\",\"\") + \";\";\r\n            }\r\n\r\n            Long currTime = ParseLong(csvLine[0]);\r\n\r\n            for (int i = 1; i < readCsvList.size(); i++) {\r\n                if(!firstLine){\r\n                    Long additionalTime = ParseLong(readCsvList.get(i).get(addIndex[i])[0]);\r\n\r\n                    try {\r\n                        while (currTime > additionalTime) {\r\n                            addIndex[i]++;\r\n                            additionalTime = ParseLong(readCsvList.get(i).get(addIndex[i])[0]);\r\n                        }\r\n                    } catch (Exception e) {\r\n                        addIndex[i]--;\r\n                    }\r\n                }\r\n\r\n\r\n                for (int j = 1; j < readCsvList.get(i).get(addIndex[i]).length; j++) {\r\n                    currLine += readCsvList.get(i).get(addIndex[i])[j].replace(\"\\n\",\"\") + \";\";\r\n                }\r\n                if(firstLine){\r\n                    addIndex[i]++;\r\n                }\r\n            }\r\n            currLine += \"\\n\";\r\n            try {\r\n                if (dataOutputStream != null) {\r\n                    dataOutputStream.write(currLine.getBytes());\r\n                }\r\n            } catch (ArrayIndexOutOfBoundsException | IOException aioobe) {\r\n                aioobe.printStackTrace();\r\n            }\r\n            firstLine=false;\r\n        }\r\n\r\n\r\n        try {\r\n            dataOutputStream.close();\r\n        } catch (IOException ex) {\r\n            ex.printStackTrace();\r\n        }\r\n\r\n        File checkFile = new File(folderPath + \"summary\" + CSV_EXTENSION);\r\n\r\n        String mergedFilePath = \"\";\r\n        return mergedFilePath;\r\n\r\n    }\r\n\r\n    private long ParseLong(String strNum){\r\n        long myNum = 0;\r\n\r\n        try {\r\n            myNum = Integer.parseInt(strNum);\r\n        } catch(NumberFormatException nfe) {\r\n            nfe.printStackTrace();\r\n        }\r\n        return myNum;\r\n    }\r\n\r\n    private float ParseFloat(String strNum){\r\n        float myNum = 0;\r\n\r\n        try {\r\n            myNum = Float.parseFloat(strNum);\r\n        } catch(NumberFormatException nfe) {\r\n            nfe.printStackTrace();\r\n        }\r\n        return myNum;\r\n    }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/csvparcer/CsvMerger.java	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/src/main/java/com/example/universalseismiclogger/csvparcer/CsvMerger.java	(date 1620842311824)
+@@ -18,13 +18,14 @@
+         this.fileList = fileList;
+     }
+ 
+-    public String Merge(String folderPath) {
++    public List<String[]> Merge(String folderPath) {
++        String mergedFilePath = folderPath + "_sum" + CSV_EXTENSION;
+         List<List<String[]>> readCsvList = new ArrayList<>();
+         int resListLength = 1;
+ 
+         FileOutputStream dataOutputStream = null;
+         try {
+-            dataOutputStream = new FileOutputStream(folderPath + "_sum" + CSV_EXTENSION);
++            dataOutputStream = new FileOutputStream(mergedFilePath);
+         } catch (FileNotFoundException e) {
+             e.printStackTrace();
+         }
+@@ -35,6 +36,7 @@
+         }
+ 
+         List<String[]> resultCsvFile = new ArrayList<>();
++        int resultLineIndex=0;
+         int[] addIndex = new int[readCsvList.size()];
+ 
+         boolean firstLine = true;
+@@ -64,12 +66,14 @@
+ 
+ 
+                 for (int j = 1; j < readCsvList.get(i).get(addIndex[i]).length; j++) {
+-                    currLine += readCsvList.get(i).get(addIndex[i])[j].replace("\n","") + ";";
++                    if(j!=1 || i!=1) currLine += ";";
++                    currLine += readCsvList.get(i).get(addIndex[i])[j].replace("\n","");
+                 }
+                 if(firstLine){
+                     addIndex[i]++;
+                 }
+             }
++            resultCsvFile.add(currLine.split(";"));
+             currLine += "\n";
+             try {
+                 if (dataOutputStream != null) {
+@@ -88,10 +92,7 @@
+             ex.printStackTrace();
+         }
+ 
+-        File checkFile = new File(folderPath + "summary" + CSV_EXTENSION);
+-
+-        String mergedFilePath = "";
+-        return mergedFilePath;
++        return resultCsvFile;
+ 
+     }
+ 
+Index: app/src/main/java/com/example/universalseismiclogger/filescanner/FileScanner.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.universalseismiclogger.filescanner;\r\n\r\nimport android.content.Context;\r\nimport android.media.MediaScannerConnection;\r\n\r\nimport java.io.File;\r\nimport java.io.FileFilter;\r\n\r\npublic class FileScanner {\r\n\r\n    public void scan(Context baseContext, String folderPath) {\r\n        // Scan files only (not folders);\r\n        File[] files = new File(folderPath).listFiles(new FileFilter() {\r\n            @Override\r\n            public boolean accept(File pathname) {\r\n                return pathname.isFile();\r\n            }\r\n        });\r\n\r\n        String[] paths = new String[files.length];\r\n        for (int co=0; co< files.length; co++)\r\n            paths[co] = files[co].getAbsolutePath();\r\n\r\n        MediaScannerConnection.scanFile(baseContext, paths, null, null);\r\n\r\n        // and now recursively scan subfolders\r\n        files = new File(folderPath).listFiles(new FileFilter() {\r\n            @Override\r\n            public boolean accept(File pathname) {\r\n                return pathname.isDirectory();\r\n            }\r\n        });\r\n\r\n        for (int co=0; co<files.length; co++)\r\n            scan(baseContext, files[co].getAbsolutePath());\r\n    }\r\n\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/filescanner/FileScanner.java	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/src/main/java/com/example/universalseismiclogger/filescanner/FileScanner.java	(date 1620575379784)
+@@ -10,29 +10,35 @@
+ 
+     public void scan(Context baseContext, String folderPath) {
+         // Scan files only (not folders);
+-        File[] files = new File(folderPath).listFiles(new FileFilter() {
+-            @Override
+-            public boolean accept(File pathname) {
+-                return pathname.isFile();
+-            }
+-        });
++        try {
++
++            File[] files = new File(folderPath).listFiles(new FileFilter() {
++                @Override
++                public boolean accept(File pathname) {
++                    return pathname.isFile();
++                }
++            });
+ 
+-        String[] paths = new String[files.length];
+-        for (int co=0; co< files.length; co++)
+-            paths[co] = files[co].getAbsolutePath();
++            String[] paths = new String[files.length];
++            for (int co=0; co< files.length; co++)
++                paths[co] = files[co].getAbsolutePath();
+ 
+-        MediaScannerConnection.scanFile(baseContext, paths, null, null);
++            MediaScannerConnection.scanFile(baseContext, paths, null, null);
+ 
+-        // and now recursively scan subfolders
+-        files = new File(folderPath).listFiles(new FileFilter() {
+-            @Override
+-            public boolean accept(File pathname) {
+-                return pathname.isDirectory();
+-            }
+-        });
++            // and now recursively scan subfolders
++            files = new File(folderPath).listFiles(new FileFilter() {
++                @Override
++                public boolean accept(File pathname) {
++                    return pathname.isDirectory();
++                }
++            });
+ 
+-        for (int co=0; co<files.length; co++)
+-            scan(baseContext, files[co].getAbsolutePath());
++            for (int co=0; co<files.length; co++)
++                scan(baseContext, files[co].getAbsolutePath());
++        }
++        catch (Exception e){
++            e.printStackTrace();
++        }
+     }
+ 
+ 
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>apply plugin: 'com.android.application'\r\n\r\nandroid {\r\n    compileSdkVersion 29\r\n    buildToolsVersion \"29.0.2\"\r\n    defaultConfig {\r\n        applicationId \"com.example.universalseismiclogger\"\r\n        minSdkVersion 19\r\n        targetSdkVersion 29\r\n        versionCode 1\r\n        versionName \"1.0\"\r\n        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\r\n    }\r\n    buildTypes {\r\n        release {\r\n            minifyEnabled false\r\n            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\r\n        }\r\n    }\r\n    compileOptions {\r\n        sourceCompatibility JavaVersion.VERSION_1_8\r\n        targetCompatibility JavaVersion.VERSION_1_8\r\n    }\r\n}\r\n\r\nrepositories {\r\n    maven {\r\n        url \"https://jitpack.io\"\r\n    }\r\n}\r\n\r\ndependencies {\r\n    implementation fileTree(dir: 'libs', include: ['*.jar'])\r\n    implementation 'androidx.appcompat:appcompat:1.0.2'\r\n    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'\r\n    testImplementation 'junit:junit:4.12'\r\n    androidTestImplementation 'androidx.test.ext:junit:1.1.0'\r\n    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'\r\n    implementation 'com.github.instacart.truetime-android:library:3.4'\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/build.gradle	(date 1620765526794)
+@@ -17,6 +17,9 @@
+             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+         }
+     }
++    aaptOptions {
++        noCompress "tflite"
++    }
+     compileOptions {
+         sourceCompatibility JavaVersion.VERSION_1_8
+         targetCompatibility JavaVersion.VERSION_1_8
+@@ -37,4 +40,5 @@
+     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+     implementation 'com.github.instacart.truetime-android:library:3.4'
++    implementation 'org.tensorflow:tensorflow-lite:+'
+ }
+Index: app/src/main/java/com/example/universalseismiclogger/converter/ConverterSensorsToSeismic.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/converter/ConverterSensorsToSeismic.java	(date 1620844055389)
++++ app/src/main/java/com/example/universalseismiclogger/converter/ConverterSensorsToSeismic.java	(date 1620844055389)
+@@ -0,0 +1,121 @@
++package com.example.universalseismiclogger.converter;
++
++import android.content.Context;
++
++import com.example.universalseismiclogger.csvparcer.CsvFile;
++import com.example.universalseismiclogger.neuralnetwork.NNModelAccessor;
++
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.FileNotFoundException;
++import java.io.FileOutputStream;
++import java.io.IOException;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Vector;
++
++import static com.example.universalseismiclogger.shared.Extensions.CSV_EXTENSION;
++
++public class ConverterSensorsToSeismic {
++
++    private List<String[]> oneCsv;
++    private NNModelAccessor dnnModel;
++    private Context activityContext;
++
++    public ConverterSensorsToSeismic(List<String[]> oneCsv, Context activityContext){
++        this.activityContext = activityContext;
++        dnnModel = new NNModelAccessor(activityContext);
++        this.oneCsv = oneCsv;
++    }
++
++    public String Convert(String folderPath, String fileName) throws FileNotFoundException {
++
++        String mergedFilePath = folderPath+ fileName + "_neuron" + CSV_EXTENSION;
++
++        FileOutputStream dataOutputStream = null;
++        try {
++            dataOutputStream = new FileOutputStream(mergedFilePath);
++        } catch (FileNotFoundException e) {
++            e.printStackTrace();
++        }
++
++        List<String[]> resultCsvFile = new ArrayList<>();
++
++        String headerLine = oneCsv.get(0)[0] + oneCsv.get(0)[1]+'\n';
++        try {
++            if (dataOutputStream != null) {
++                dataOutputStream.write(headerLine.getBytes());
++            }
++        } catch (ArrayIndexOutOfBoundsException | IOException aioobe) {
++            aioobe.printStackTrace();
++        }
++
++        float[] modelParams = new float[10];
++
++        for(int i=1; i< oneCsv.size(); i++){
++            modelParams[0] = GetParam(i,0);
++            modelParams[1] = GetParam(i,2);
++            modelParams[2] = GetParam(i,3);
++            modelParams[3] = GetParam(i,4);
++            modelParams[4] = GetParam(i,5);
++            modelParams[5] = GetParam(i,6);
++            modelParams[6] = GetParam(i,7);
++            modelParams[7] = GetParam(i,8);
++            modelParams[8] = GetParam(i,9);
++            modelParams[9] = GetParam(i,10);
++
++            float convertedData = dnnModel.doInference(modelParams);
++            String convertedLine = GetParam(i,0) +";"+convertedData+'\n';
++            try {
++                if (dataOutputStream != null) {
++                    dataOutputStream.write(convertedLine.getBytes());
++                }
++            } catch (ArrayIndexOutOfBoundsException | IOException aioobe) {
++                aioobe.printStackTrace();
++            }
++        }
++
++        try {
++            dataOutputStream.close();
++        } catch (IOException ex) {
++            ex.printStackTrace();
++        }
++
++        return mergedFilePath;
++
++    }
++
++    private long ParseLong(String strNum){
++        long myNum = 0;
++
++        try {
++            myNum = Integer.parseInt(strNum);
++        } catch(NumberFormatException nfe) {
++            nfe.printStackTrace();
++        }
++        return myNum;
++    }
++
++    private float ParseFloat(String strNum){
++        float myNum = 0;
++
++        try {
++            myNum = Float.parseFloat(strNum);
++        } catch(NumberFormatException nfe) {
++            nfe.printStackTrace();
++        }
++        return myNum;
++    }
++
++    private float GetParam(int i, int j){
++        float result = 0;
++        try{
++            result = ParseFloat(oneCsv.get(i)[j]);
++        }
++        catch (Exception e){
++            e.printStackTrace();
++        }
++        return result;
++    }
++
++}
+Index: app/src/main/java/com/example/universalseismiclogger/activities/RecordingActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.universalseismiclogger.activities;\r\n\r\nimport androidx.appcompat.app.AppCompatActivity;\r\n\r\nimport android.annotation.SuppressLint;\r\nimport android.content.Intent;\r\nimport android.content.SharedPreferences;\r\nimport android.os.Bundle;\r\n\r\nimport android.os.Handler;\r\nimport android.os.Looper;\r\nimport android.os.Message;\r\nimport android.os.SystemClock;\r\nimport android.util.Log;\r\nimport android.view.KeyEvent;\r\nimport android.view.View;\r\nimport android.view.WindowManager;\r\nimport android.widget.Button;\r\nimport android.widget.TextView;\r\nimport android.widget.Toast;\r\n\r\nimport com.example.universalseismiclogger.R;\r\n\r\nimport java.io.IOException;\r\nimport java.text.SimpleDateFormat;\r\nimport java.util.Date;\r\nimport java.util.Locale;\r\nimport java.util.concurrent.ExecutorService;\r\nimport java.util.concurrent.Executors;\r\n\r\nimport static android.os.SystemClock.*;\r\n\r\nimport com.example.universalseismiclogger.converter.ConverterMicPcmToCsv;\r\nimport com.example.universalseismiclogger.filescanner.FileScanner;\r\nimport com.example.universalseismiclogger.locationprovider.GpsLocationProvider;\r\nimport com.example.universalseismiclogger.permissions.PermissionRequester;\r\nimport com.example.universalseismiclogger.recorder.RecorderManager;\r\nimport com.example.universalseismiclogger.shared.ITraceable;\r\nimport com.instacart.library.truetime.TrueTime;\r\n\r\nimport static com.example.universalseismiclogger.shared.DefaultStrings.*;\r\nimport static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;\r\n\r\npublic class RecordingActivity extends AppCompatActivity implements ITraceable {\r\n\r\n    private static final int CONFIG_REQUEST_CODE = 1;\r\n\r\n    private PermissionRequester permissionRequester = new PermissionRequester();\r\n\r\n    private boolean isRecording = false;\r\n    GpsLocationProvider locationProvider;\r\n\r\n    private Button buttonRec;           // Start record\r\n    private Button buttonStop;          // Stop and save record\r\n    private TextView textViewRec;       // Shows elapsed time of record\r\n    private TextView textViewCurrentTime;\r\n\r\n    private Date dateNow;\r\n\r\n    //private RecorderMicToWav recorderMicToWav;\r\n    private RecorderManager recorderManager = new RecorderManager();\r\n\r\n    private SharedPreferences recorderConfig;\r\n\r\n    private Handler customHandler = new Handler();\r\n\r\n    private long startTime = 0L;        // start time of measuring\r\n    private long timeInMilliseconds = 0L;\r\n\r\n    @Override\r\n    protected void onCreate(Bundle savedInstanceState) {\r\n        super.onCreate(savedInstanceState);\r\n        setContentView(R.layout.activity_recording);\r\n\r\n        getWindow().addFlags((WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));\r\n\r\n        InitLayoutViews();\r\n\r\n        permissionRequester.CheckPermissions(this);\r\n\r\n        recorderConfig = getSharedPreferences(RECORDER_CONFIG, MODE_PRIVATE);\r\n\r\n        InitRecorderManager();\r\n\r\n        initTrueTime();\r\n\r\n        initGpsLocationProvider();\r\n\r\n        getGpsLocation();\r\n\r\n        initRecorderManager();\r\n    }\r\n\r\n    private void initRecorderManager() {\r\n        recorderManager = (RecorderManager) new RecorderManager().init(this, recorderConfig);\r\n    }\r\n\r\n    private void initTrueTime(){\r\n        new Thread(new Runnable() {\r\n            @Override\r\n            public void run() {\r\n                try {\r\n                    TrueTime.build().initialize();\r\n                } catch (IOException e) {\r\n                    e.printStackTrace();\r\n                }\r\n            }\r\n        }).start();\r\n    }\r\n\r\n    private void initGpsLocationProvider(){\r\n        new Thread(new Runnable() {\r\n            @Override\r\n            public void run() {\r\n                locationProvider = new GpsLocationProvider(RecordingActivity.this, recorderConfig);\r\n            }\r\n        }).start();\r\n    }\r\n    public Handler mHandler;\r\n    private void getGpsLocation(){\r\n        new Thread(new Runnable() {\r\n\r\n            @Override\r\n            public void run() {\r\n                while (locationProvider == null){;}\r\n                Looper.prepare();\r\n                mHandler = new Handler(Looper.myLooper()) {\r\n                    public void handleMessage(Message msg) {\r\n                        int a = 0;\r\n                    }\r\n                };\r\n                locationProvider.getLocation();\r\n                Looper.loop();\r\n\r\n                Toast.makeText(RecordingActivity.this,\r\n                        recorderConfig.getString(GPS_LOCATION, GPS_LOCATION_DEFAULT),\r\n                        Toast.LENGTH_LONG).show();\r\n                Log.d(MY_LOGS, recorderConfig.getString(GPS_LOCATION, GPS_LOCATION_DEFAULT));\r\n\r\n            }\r\n        }).start();\r\n    }\r\n\r\n\r\n//    private void InitRecorderMicToWav() {\r\n//        int sampleRate = 8000;\r\n//        try {\r\n//            sampleRate = (int) spinnerSampleRate.getSelectedItem();\r\n//        }\r\n//        catch (ClassCastException ex){\r\n//            Log.d(TAG,\"Error getting sample rate from spinner\");\r\n//        }\r\n//\r\n//        boolean isUnprocessed = switchUnprocessedMic.isChecked();\r\n//        recorderMicToWav = new RecorderMicToWav(this, sampleRate, isUnprocessed);\r\n//    }\r\n\r\n\r\n    private void InitRecorderManager(){\r\n        recorderManager.init(this, recorderConfig);\r\n    }\r\n\r\n    private void InitLayoutViews() {\r\n        buttonRec = (Button) findViewById(R.id.buttonRecord);\r\n        buttonRec.setText(R.string.record_button_start);\r\n\r\n        buttonStop = (Button) findViewById(R.id.buttonStop);\r\n        buttonStop.setEnabled(false);\r\n        buttonStop.setVisibility(View.INVISIBLE);\r\n\r\n        textViewRec = (TextView) findViewById(R.id.textViewChronometer);\r\n        textViewCurrentTime = (TextView) findViewById(R.id.textViewCurrentTime);\r\n\r\n        ((TextView) findViewById(R.id.textViewPath)).setText(getString(R.string.record_folder_path) + BASE_FOLDER_PATH);\r\n\r\n        customHandler.post(updateCurrentTime);\r\n        customHandler.post(updateCurrentLocation);\r\n\r\n    }\r\n\r\n\r\n    @Override\r\n    public void onRequestPermissionsResult(int requestCode,\r\n                                           String[] permissions, int[] grantResults) {\r\n        permissionRequester.OnPermissionResult(this, requestCode, permissions, grantResults);\r\n    }\r\n\r\n    @Override\r\n    public boolean onKeyDown(int keyCode, KeyEvent event){\r\n        if(keyCode == KeyEvent.KEYCODE_HEADSETHOOK ||\r\n            keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||\r\n            keyCode == KeyEvent.KEYCODE_VOLUME_UP){\r\n            return true;\r\n        }\r\n        else return super.onKeyDown(keyCode, event);\r\n    }\r\n\r\n    public void onConfigClick(View view){\r\n        Intent configIntent = new Intent(this, ConfigActivity.class);\r\n        startActivity(configIntent);\r\n    }\r\n\r\n    // Starts audio recording\r\n    public void onRecordClick(View view){\r\n\r\n        isRecording = true;\r\n\r\n        if (TrueTime.isInitialized())\r\n            dateNow = TrueTime.now();\r\n        else dateNow = new Date();\r\n        SimpleDateFormat sdf = new SimpleDateFormat(\"yy_MM_dd_HH-mm-ss\", Locale.getDefault());\r\n        String currentDateAndTime = sdf.format(dateNow);\r\n        //EditText editTextName = (EditText) RecordingActivity.this.findViewById(R.id.editTextLogName);\r\n        String recordFileName = recorderConfig.getString(LOG_NAME, LOG_NAME_DEFAULT)+ \"_\" + currentDateAndTime;\r\n\r\n        buttonRec.setVisibility(View.INVISIBLE);\r\n        buttonRec.setEnabled(false);\r\n        buttonStop.setVisibility(View.VISIBLE);\r\n        buttonStop.setEnabled(true);\r\n\r\n\r\n        startTime = uptimeMillis();\r\n        customHandler.post(updateTimerThread);\r\n\r\n        Toast.makeText(this, R.string.record_started, Toast.LENGTH_SHORT).show();\r\n        InitRecorderManager();\r\n        recorderManager.SetDate(dateNow);\r\n        recorderManager.startRecorder(recordFileName);\r\n        //wavRecorder = new TestWavRecorder(Environment.getExternalStorageDirectory()\r\n        // + \"/UniversalSeismicLogger/\"+recordFileName);\r\n        //wavRecorder.startRecording();\r\n\r\n    }\r\n\r\n\r\n    //stops audio record and saves file to path\r\n    public void onStopClick(View view){\r\n        isRecording = false;\r\n        startTime = 0L;\r\n        customHandler.removeCallbacks(updateTimerThread);\r\n\r\n        recorderManager.stopRecorder();\r\n\r\n        buttonRec.setEnabled(true);\r\n        buttonRec.setVisibility(View.VISIBLE);\r\n        buttonStop.setEnabled(false);\r\n        buttonStop.setVisibility(View.INVISIBLE);\r\n\r\n        Toast.makeText(this,\r\n                recorderConfig.getString(GPS_LOCATION, GPS_LOCATION_DEFAULT),\r\n                Toast.LENGTH_LONG).show();\r\n\r\n        String fileSavedAtPath = getResources().getString(R.string.file_saved_at_path);\r\n        //Toast.makeText(this, fileSavedAtPath, Toast.LENGTH_SHORT).show();\r\n        Toast.makeText(this, fileSavedAtPath + \" \" + BASE_FOLDER_PATH\r\n                + recorderManager.getFilePath() + \"/\", Toast.LENGTH_LONG).show();\r\n\r\n    }\r\n\r\n\r\n    private final Runnable updateCurrentTime = new Runnable() {\r\n        @SuppressLint({\"SetTextI18n\", \"DefaultLocale\"})\r\n        public void run() {\r\n            if(TrueTime.isInitialized()) {\r\n                dateNow = TrueTime.now();\r\n            }\r\n            else dateNow = new Date();\r\n            SimpleDateFormat sdf = new SimpleDateFormat(\"yyyy-MM-dd HH:mm:ss.SSS\", Locale.getDefault());\r\n            String currentDateAndTime = sdf.format(dateNow);\r\n            textViewCurrentTime.setText(getString(R.string.current_time)+currentDateAndTime);\r\n\r\n            customHandler.postDelayed(this, 100);\r\n        }\r\n    };\r\n\r\n    private final Runnable updateCurrentLocation = new Runnable() {\r\n        @SuppressLint({\"SetTextI18n\", \"DefaultLocale\"})\r\n        public void run() {\r\n            String myLocation = recorderConfig.getString(GPS_LOCATION, GPS_LOCATION_DEFAULT);\r\n            ((TextView)findViewById(R.id.textViewCurrentLocation)).setText(\r\n                    getString(R.string.current_location)+myLocation);\r\n            customHandler.postDelayed(this, 1000);\r\n        }\r\n    };\r\n\r\n    //counting elapsed time of audio record\r\n    private final Runnable updateTimerThread = new Runnable() {\r\n        @SuppressLint({\"SetTextI18n\", \"DefaultLocale\"})\r\n        public void run() {\r\n            timeInMilliseconds = SystemClock.uptimeMillis() - startTime;\r\n            int secs = (int) (timeInMilliseconds / 1000);\r\n            int mins = secs / 60;\r\n            secs = secs % 60;\r\n            int milliseconds = (int) (timeInMilliseconds % 1000);\r\n            textViewRec.setText(\"\" + mins + \":\" + String.format(\"%02d\", secs) + \":\" + String.format(\"%03d\", milliseconds));\r\n            customHandler.postDelayed(this, 50);\r\n        }\r\n    };\r\n\r\n    @Override\r\n    protected void onPause(){\r\n        if(isRecording){\r\n            onStopClick(new View(this));\r\n        }\r\n        super.onPause();\r\n    }\r\n\r\n    @Override\r\n    protected void onResume(){\r\n        InitRecorderManager();\r\n        super.onResume();\r\n    }\r\n\r\n    @Override\r\n    protected void onDestroy() {\r\n        //recorderManager.stopRecorder();\r\n        onStopClick(new View(this));\r\n        super.onDestroy();\r\n    }\r\n\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/activities/RecordingActivity.java	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/src/main/java/com/example/universalseismiclogger/activities/RecordingActivity.java	(date 1620576039732)
+@@ -21,6 +21,7 @@
+ 
+ import com.example.universalseismiclogger.R;
+ 
++import java.io.File;
+ import java.io.IOException;
+ import java.text.SimpleDateFormat;
+ import java.util.Date;
+@@ -89,6 +90,13 @@
+         getGpsLocation();
+ 
+         initRecorderManager();
++
++        File folder = new File(BASE_FOLDER_PATH);
++        boolean success = true;
++        if (!folder.exists()) {
++            success = folder.mkdirs();
++        }
++
+     }
+ 
+     private void initRecorderManager() {
+Index: app/src/main/java/com/example/universalseismiclogger/neuralnetwork/NNModelAccessor.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/neuralnetwork/NNModelAccessor.java	(date 1620843020509)
++++ app/src/main/java/com/example/universalseismiclogger/neuralnetwork/NNModelAccessor.java	(date 1620843020509)
+@@ -0,0 +1,51 @@
++package com.example.universalseismiclogger.neuralnetwork;
++
++import android.app.Activity;
++import android.content.Context;
++import android.content.res.AssetFileDescriptor;
++
++import org.tensorflow.lite.Interpreter;
++
++import java.io.File;
++import java.io.FileInputStream;
++import java.io.IOException;
++import java.nio.MappedByteBuffer;
++import java.nio.channels.FileChannel;
++
++public class NNModelAccessor {
++
++    private Interpreter tflite;
++    private Context activityContext;
++
++    public NNModelAccessor(Context activityContext){
++        this.activityContext = activityContext;
++        try {
++            tflite = new Interpreter(loadModelFile());
++        }catch (Exception ex){
++            ex.printStackTrace();
++        }
++
++    }
++
++    private MappedByteBuffer loadModelFile() throws IOException {
++        AssetFileDescriptor fileDescriptor=activityContext.getAssets().openFd("dnn_model.tflite");
++        FileInputStream inputStream=new FileInputStream(fileDescriptor.getFileDescriptor());
++        FileChannel fileChannel=inputStream.getChannel();
++        long startOffset=fileDescriptor.getStartOffset();
++        long declareLength=fileDescriptor.getDeclaredLength();
++        return fileChannel.map(FileChannel.MapMode.READ_ONLY,startOffset,declareLength);
++    }
++
++    public float doInference(float[] input) throws IndexOutOfBoundsException{
++        float[][] output=new float[1][1];
++        try {
++            tflite.run(input, output);
++        }
++        catch (Exception ex){
++            ex.printStackTrace();
++        }
++        float inferredValue=output[0][0];
++        return inferredValue;
++    }
++
++}
+Index: app/src/main/java/com/example/universalseismiclogger/recorder/RecorderOrientationSensors.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.universalseismiclogger.recorder;\r\n\r\nimport android.content.Context;\r\nimport android.content.SharedPreferences;\r\nimport android.hardware.Sensor;\r\nimport android.hardware.SensorEvent;\r\nimport android.hardware.SensorEventListener;\r\nimport android.hardware.SensorManager;\r\nimport android.util.Log;\r\n\r\nimport com.example.universalseismiclogger.recorder.interfaces.IRecorder;\r\nimport com.example.universalseismiclogger.recorder.interfaces.IRecorderReceiver;\r\nimport com.example.universalseismiclogger.recorder.interfaces.IRecorderTransmitter;\r\nimport com.example.universalseismiclogger.shared.ITraceable;\r\n\r\nimport java.io.File;\r\nimport java.io.FileNotFoundException;\r\nimport java.io.FileOutputStream;\r\nimport java.io.IOException;\r\nimport java.text.DecimalFormat;\r\nimport java.util.Date;\r\nimport java.util.concurrent.ExecutorService;\r\nimport java.util.concurrent.Executors;\r\n\r\nimport static com.example.universalseismiclogger.shared.DefaultStrings.*;\r\nimport static com.example.universalseismiclogger.shared.Extensions.CSV_EXTENSION;\r\nimport static com.example.universalseismiclogger.shared.Extensions.PCM_EXTENSION;\r\nimport static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;\r\n\r\npublic class RecorderOrientationSensors implements IRecorder, IRecorderTransmitter, ITraceable, SensorEventListener {\r\n\r\n    private SensorManager sensorManager;\r\n    private Sensor sensor;\r\n\r\n    private String filename;\r\n    private int recorderType;\r\n    private int recorderId;\r\n    private int sampleRate;\r\n    private int intervalMicroSec;\r\n    private Context parentContext;\r\n    private static boolean isFileSaved = false;\r\n    private String recordFileName;\r\n    private String recordFolderPath;\r\n    private String recordFullPath;\r\n    private long startDateMillis;\r\n\r\n\r\n    private boolean isReading = false;\r\n    private File recordFile;\r\n    private int dataBufferSize = DATA_BUFFER_SIZE_DEFAULT*10;            // buffer size for audioRecord\r\n    private float[] dataBuffer;\r\n    private int bytes_per_sample = 4;\r\n    private int samplesRead;\r\n    private int numOfDataParams;\r\n    private int dataSource;\r\n\r\n\r\n\r\n    //private ObjectOutputStream dataOutputStream;\r\n    private FileOutputStream dataOutputStream;\r\n\r\n    private final ExecutorService executorService = Executors.newSingleThreadExecutor();\r\n\r\n    public RecorderOrientationSensors(int recorderType){\r\n        this.recorderType = recorderType;\r\n    }\r\n\r\n    @Override\r\n    public IRecorder init(Context activityContext, SharedPreferences settings, int id) {\r\n        recorderId = id;\r\n        sampleRate = settings.getInt(SAMPLE_RATE, SAMPLE_RATE_DEFAULT);\r\n        intervalMicroSec = 1000000 / sampleRate;\r\n        parentContext = activityContext;\r\n\r\n        sensorManager = (SensorManager) activityContext.getSystemService(Context.SENSOR_SERVICE);\r\n        sensor = null;\r\n        switch (recorderType){\r\n            case GYROSCOPE_ID:\r\n                numOfDataParams = 3;\r\n                sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);\r\n                break;\r\n            case ACCELEROMETER_ID:\r\n                numOfDataParams = 3;\r\n                sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);\r\n                break;\r\n            case COMPASS_ID:\r\n                numOfDataParams = 1;\r\n                sensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);\r\n                break;\r\n        }\r\n        dataBufferSize = DATA_BUFFER_SIZE_DEFAULT * 10 * numOfDataParams;\r\n        return this;\r\n    }\r\n\r\n\r\n    private final Runnable recordingTask = new Runnable() {\r\n        @Override\r\n        public void run() {\r\n            WriteDataToFile();\r\n        }\r\n    };\r\n\r\n    public void WriteDataToFile(){\r\n        isFileSaved = false;\r\n\r\n        try {\r\n            dataOutputStream = new FileOutputStream(recordFullPath);\r\n            //dataOutputStream = new ObjectOutputStream(new FileOutputStream(recordFullPath));\r\n            //dataOutputStream.flush();\r\n            //dataOutputStream.writeFloat(numOfDataParams);\r\n            while (isReading) {;}\r\n        } catch (FileNotFoundException e) {\r\n            e.printStackTrace();\r\n        } catch (IOException e) {\r\n            e.printStackTrace();\r\n        } finally {\r\n            try {\r\n                dataOutputStream.close();\r\n                isFileSaved = true;\r\n            } catch (IOException e) {\r\n                e.printStackTrace();\r\n            }\r\n            File checkFile = new File(recordFullPath);\r\n            Log.d(MY_LOGS, \"Orientation sensors record File(\"+ recordFullPath +\") length(): \" + checkFile.length());\r\n        }\r\n    }\r\n\r\n\r\n    @Override\r\n    public void startRecorder(String fileName) throws IOException {\r\n        this.filename = fileName;\r\n\r\n        startDateMillis = System.currentTimeMillis();\r\n\r\n        samplesRead = 0;\r\n\r\n        dataOutputStream = null;\r\n\r\n        recordFileName = fileName + \"_sens\"+recorderType;\r\n        recordFolderPath = BASE_FOLDER_PATH + fileName +\"/\";\r\n        recordFullPath = recordFolderPath + recordFileName + CSV_EXTENSION;\r\n        File recordDir = new File(recordFolderPath);\r\n        recordDir.mkdirs();\r\n        Log.d(MY_LOGS, \"sensor \"+recorderType+\" record start\");\r\n\r\n        samplesRead = 0;\r\n\r\n        if (sensor != null){\r\n            isReading = true;\r\n            executorService.submit(recordingTask);\r\n            sensorManager.registerListener(this, sensor, intervalMicroSec, intervalMicroSec);\r\n        }\r\n        else{\r\n            throw new IOException(\"SensorType id=\"+recorderType+\" is not supported by this device!\");\r\n        }\r\n\r\n    }\r\n\r\n    @Override\r\n    public void stopRecorder() throws IOException {\r\n        Log.d(MY_LOGS, \"sensor \"+recorderType+\" record stop\");\r\n        sensorManager.unregisterListener(this);\r\n        isReading = false;\r\n    }\r\n\r\n    @Override\r\n    public String getFilePath() {\r\n        return recordFullPath;\r\n    }\r\n\r\n    @Override\r\n    public int getSampleRate() {\r\n        return sampleRate;\r\n    }\r\n\r\n    @Override\r\n    public int getRecorderType() {\r\n        return recorderType;\r\n    }\r\n\r\n    private DecimalFormat df = new DecimalFormat(\"#####.#####\");\r\n    private boolean isFirstLine = true;\r\n    @Override\r\n    public void onSensorChanged(SensorEvent sensorEvent) {\r\n        try {\r\n            if(dataOutputStream != null) {\r\n                if(isFirstLine){\r\n                    isFirstLine=false;\r\n                    String firstLine = \"time;\";\r\n                    for (int i=0; i<sensorEvent.values.length; i++)\r\n                    {\r\n                        firstLine+= sensorEvent.sensor.getName()+i+\";\";\r\n                    }\r\n                    firstLine+=\"\\n\";\r\n                    dataOutputStream.write(firstLine.getBytes());\r\n                }\r\n                String line = String.valueOf(System.currentTimeMillis() -\r\n                        startDateMillis);\r\n                for (float sensorValue : sensorEvent.values) {\r\n                    line+= \"; \"+df.format(sensorValue);\r\n                }\r\n                line+='\\n';\r\n                dataOutputStream.write(line.getBytes());\r\n                samplesRead++;\r\n            }\r\n        }\r\n        catch (ArrayIndexOutOfBoundsException | IOException aioobe){\r\n            aioobe.printStackTrace();\r\n        }\r\n        catch (Exception e){\r\n            e.printStackTrace();\r\n        }\r\n    }\r\n\r\n    @Override\r\n    public void onAccuracyChanged(Sensor sensor, int i) {\r\n\r\n    }\r\n\r\n    @Override\r\n    public void SetReceiver(IRecorderReceiver receiver) {\r\n\r\n    }\r\n\r\n    @Override\r\n    public void NotifyReceivers() {\r\n\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/universalseismiclogger/recorder/RecorderOrientationSensors.java	(revision 087705ff3e31a28bfd632ae4d25cb27cfb9d342e)
++++ app/src/main/java/com/example/universalseismiclogger/recorder/RecorderOrientationSensors.java	(date 1620745288938)
+@@ -18,7 +18,9 @@
+ import java.io.FileOutputStream;
+ import java.io.IOException;
+ import java.text.DecimalFormat;
++import java.text.DecimalFormatSymbols;
+ import java.util.Date;
++import java.util.Locale;
+ import java.util.concurrent.ExecutorService;
+ import java.util.concurrent.Executors;
+ 
+@@ -178,7 +180,7 @@
+         return recorderType;
+     }
+ 
+-    private DecimalFormat df = new DecimalFormat("#####.#####");
++    private DecimalFormat df = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance(Locale.US));
+     private boolean isFirstLine = true;
+     @Override
+     public void onSensorChanged(SensorEvent sensorEvent) {
+@@ -186,10 +188,10 @@
+             if(dataOutputStream != null) {
+                 if(isFirstLine){
+                     isFirstLine=false;
+-                    String firstLine = "time;";
++                    String firstLine = "time";
+                     for (int i=0; i<sensorEvent.values.length; i++)
+                     {
+-                        firstLine+= sensorEvent.sensor.getName()+i+";";
++                        firstLine+= ";"+sensorEvent.sensor.getName()+i;
+                     }
+                     firstLine+="\n";
+                     dataOutputStream.write(firstLine.getBytes());
+@@ -197,7 +199,7 @@
+                 String line = String.valueOf(System.currentTimeMillis() -
+                         startDateMillis);
+                 for (float sensorValue : sensorEvent.values) {
+-                    line+= "; "+df.format(sensorValue);
++                    line+= ";"+df.format(sensorValue);
+                 }
+                 line+='\n';
+                 dataOutputStream.write(line.getBytes());
