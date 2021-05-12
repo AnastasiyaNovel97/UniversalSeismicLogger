@@ -18,13 +18,14 @@ public class CsvMerger {
         this.fileList = fileList;
     }
 
-    public String Merge(String folderPath) {
+    public List<String[]> Merge(String folderPath) {
+        String mergedFilePath = folderPath + "_sum" + CSV_EXTENSION;
         List<List<String[]>> readCsvList = new ArrayList<>();
         int resListLength = 1;
 
         FileOutputStream dataOutputStream = null;
         try {
-            dataOutputStream = new FileOutputStream(folderPath + "_sum" + CSV_EXTENSION);
+            dataOutputStream = new FileOutputStream(mergedFilePath);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -35,6 +36,7 @@ public class CsvMerger {
         }
 
         List<String[]> resultCsvFile = new ArrayList<>();
+        int resultLineIndex=0;
         int[] addIndex = new int[readCsvList.size()];
 
         boolean firstLine = true;
@@ -64,12 +66,14 @@ public class CsvMerger {
 
 
                 for (int j = 1; j < readCsvList.get(i).get(addIndex[i]).length; j++) {
-                    currLine += readCsvList.get(i).get(addIndex[i])[j].replace("\n","") + ";";
+                    if(j!=1 || i!=1) currLine += ";";
+                    currLine += readCsvList.get(i).get(addIndex[i])[j].replace("\n","");
                 }
                 if(firstLine){
                     addIndex[i]++;
                 }
             }
+            resultCsvFile.add(currLine.split(";"));
             currLine += "\n";
             try {
                 if (dataOutputStream != null) {
@@ -88,10 +92,7 @@ public class CsvMerger {
             ex.printStackTrace();
         }
 
-        File checkFile = new File(folderPath + "summary" + CSV_EXTENSION);
-
-        String mergedFilePath = "";
-        return mergedFilePath;
+        return resultCsvFile;
 
     }
 

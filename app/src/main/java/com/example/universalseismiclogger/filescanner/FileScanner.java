@@ -10,29 +10,35 @@ public class FileScanner {
 
     public void scan(Context baseContext, String folderPath) {
         // Scan files only (not folders);
-        File[] files = new File(folderPath).listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isFile();
-            }
-        });
+        try {
 
-        String[] paths = new String[files.length];
-        for (int co=0; co< files.length; co++)
-            paths[co] = files[co].getAbsolutePath();
+            File[] files = new File(folderPath).listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.isFile();
+                }
+            });
 
-        MediaScannerConnection.scanFile(baseContext, paths, null, null);
+            String[] paths = new String[files.length];
+            for (int co=0; co< files.length; co++)
+                paths[co] = files[co].getAbsolutePath();
 
-        // and now recursively scan subfolders
-        files = new File(folderPath).listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.isDirectory();
-            }
-        });
+            MediaScannerConnection.scanFile(baseContext, paths, null, null);
 
-        for (int co=0; co<files.length; co++)
-            scan(baseContext, files[co].getAbsolutePath());
+            // and now recursively scan subfolders
+            files = new File(folderPath).listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.isDirectory();
+                }
+            });
+
+            for (int co=0; co<files.length; co++)
+                scan(baseContext, files[co].getAbsolutePath());
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
 

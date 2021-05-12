@@ -21,6 +21,7 @@ import android.widget.Toast;
 
 import com.example.universalseismiclogger.R;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -89,6 +90,13 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         getGpsLocation();
 
         initRecorderManager();
+
+        File folder = new File(BASE_FOLDER_PATH);
+        boolean success = true;
+        if (!folder.exists()) {
+            success = folder.mkdirs();
+        }
+
     }
 
     private void initRecorderManager() {

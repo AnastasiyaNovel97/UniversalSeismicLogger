@@ -18,7 +18,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -178,7 +180,7 @@ public class RecorderOrientationSensors implements IRecorder, IRecorderTransmitt
         return recorderType;
     }
 
-    private DecimalFormat df = new DecimalFormat("#####.#####");
+    private DecimalFormat df = new DecimalFormat("#####.#####", DecimalFormatSymbols.getInstance(Locale.US));
     private boolean isFirstLine = true;
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
@@ -186,10 +188,10 @@ public class RecorderOrientationSensors implements IRecorder, IRecorderTransmitt
             if(dataOutputStream != null) {
                 if(isFirstLine){
                     isFirstLine=false;
-                    String firstLine = "time;";
+                    String firstLine = "time";
                     for (int i=0; i<sensorEvent.values.length; i++)
                     {
-                        firstLine+= sensorEvent.sensor.getName()+i+";";
+                        firstLine+= ";"+sensorEvent.sensor.getName()+i;
                     }
                     firstLine+="\n";
                     dataOutputStream.write(firstLine.getBytes());
@@ -197,7 +199,7 @@ public class RecorderOrientationSensors implements IRecorder, IRecorderTransmitt
                 String line = String.valueOf(System.currentTimeMillis() -
                         startDateMillis);
                 for (float sensorValue : sensorEvent.values) {
-                    line+= "; "+df.format(sensorValue);
+                    line+= ";"+df.format(sensorValue);
                 }
                 line+='\n';
                 dataOutputStream.write(line.getBytes());

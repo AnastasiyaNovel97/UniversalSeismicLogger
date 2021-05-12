@@ -5,7 +5,7 @@ import android.content.SharedPreferences;
 import android.util.Log;
 
 import com.example.universalseismiclogger.converter.ConverterMicPcmToCsv;
-import com.example.universalseismiclogger.converter.ConverterOrientationPcmToCsv;
+import com.example.universalseismiclogger.converter.ConverterSensorsToSeismic;
 import com.example.universalseismiclogger.csvparcer.CsvFile;
 import com.example.universalseismiclogger.csvparcer.CsvMerger;
 import com.example.universalseismiclogger.filescanner.FileScanner;
@@ -38,6 +38,10 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
     private SharedPreferences settings;
     private boolean isReading;
     private volatile String micCsvPath = null;
+    private volatile String mergedCsvPath = null;
+    private volatile Boolean isAllWorkEnds = false;
+
+
 
     public void SetDate(Date dateNow){
         dateStart = dateNow;
@@ -102,11 +106,13 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
                 e.printStackTrace();
             }
         }
-        int a = 0;
+        isAllWorkEnds = true;
+
     }
 
     @Override
     public void stopRecorder() {
+        isAllWorkEnds = false;
         isReading = false;
         Vector<CsvFile> csvFiles = new Vector<>();
         for (IRecorder recorder :
@@ -157,15 +163,31 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
                 e.printStackTrace();
             }
         }
+        mergedCsvPath = null;
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(new Runnable() {
             @Override
             public void run() {
-                String mergedCsvPath = (new CsvMerger(csvFiles)).Merge(recordFolderPath + recordFileName);
+                List<String[]> mergedFile = (new CsvMerger(csvFiles)).Merge(recordFolderPath + recordFileName);
+                try {
+                    ConverterSensorsToSeismic seismicConverter = new ConverterSensorsToSeismic(mergedFile,activityContext);
+                    seismicConverter.Convert(recordFolderPath,recordFileName);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+                isAllWorkEnds = true;
             }
         });
-        //Execute file scan to detect files in mtp
-        (new FileScanner()).scan(activityContext, recordFolderPath);
+
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                while (!isAllWorkEnds){;}
+                //Execute file scan to detect files in mtp
+                (new FileScanner()).scan(activityContext, recordFolderPath);
+            }
+        });
+
         Log.d(MY_LOGS, "recorders stopped.");
     }
 
