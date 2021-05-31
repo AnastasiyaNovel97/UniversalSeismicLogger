@@ -40,14 +40,14 @@ public class RecorderOrientationSensors implements IRecorder, IRecorderTransmitt
     private int sampleRate;
     private int intervalMicroSec;
     private Context parentContext;
-    private static boolean isFileSaved = false;
-    private String recordFileName;
-    private String recordFolderPath;
-    private String recordFullPath;
+    private volatile boolean isFileSaved = false;
+    private volatile String recordFileName;
+    private volatile String recordFolderPath;
+    private volatile String recordFullPath;
     private long startDateMillis;
 
 
-    private boolean isReading = false;
+    private volatile boolean isReading = false;
     private File recordFile;
     private int dataBufferSize = DATA_BUFFER_SIZE_DEFAULT*10;            // buffer size for audioRecord
     private float[] dataBuffer;

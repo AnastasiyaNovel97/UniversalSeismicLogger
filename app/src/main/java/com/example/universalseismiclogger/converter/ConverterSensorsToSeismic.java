@@ -41,7 +41,7 @@ public class ConverterSensorsToSeismic {
 
         List<String[]> resultCsvFile = new ArrayList<>();
 
-        String headerLine = oneCsv.get(0)[0] + oneCsv.get(0)[1]+'\n';
+        String headerLine = oneCsv.get(0)[0] +";"+ oneCsv.get(0)[1]+'\n';
         try {
             if (dataOutputStream != null) {
                 dataOutputStream.write(headerLine.getBytes());

@@ -53,6 +53,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     private Button buttonRec;           // Start record
     private Button buttonStop;          // Stop and save record
+    private Button buttonConfig;
     private TextView textViewRec;       // Shows elapsed time of record
     private TextView textViewCurrentTime;
 
@@ -81,7 +82,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         recorderConfig = getSharedPreferences(RECORDER_CONFIG, MODE_PRIVATE);
 
-        InitRecorderManager();
+        //InitRecorderManager();
 
         initTrueTime();
 
@@ -164,9 +165,9 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 //    }
 
 
-    private void InitRecorderManager(){
-        recorderManager.init(this, recorderConfig);
-    }
+//    private void InitRecorderManager(){
+//        recorderManager.init(this, recorderConfig);
+//    }
 
     private void InitLayoutViews() {
         buttonRec = (Button) findViewById(R.id.buttonRecord);
@@ -175,6 +176,9 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         buttonStop = (Button) findViewById(R.id.buttonStop);
         buttonStop.setEnabled(false);
         buttonStop.setVisibility(View.INVISIBLE);
+
+        buttonConfig = (Button) findViewById(R.id.button_config);
+
 
         textViewRec = (TextView) findViewById(R.id.textViewChronometer);
         textViewCurrentTime = (TextView) findViewById(R.id.textViewCurrentTime);
@@ -223,6 +227,10 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         buttonRec.setVisibility(View.INVISIBLE);
         buttonRec.setEnabled(false);
+
+        buttonConfig.setVisibility(View.INVISIBLE);
+        buttonConfig.setEnabled(false);
+
         buttonStop.setVisibility(View.VISIBLE);
         buttonStop.setEnabled(true);
 
@@ -231,7 +239,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         customHandler.post(updateTimerThread);
 
         Toast.makeText(this, R.string.record_started, Toast.LENGTH_SHORT).show();
-        InitRecorderManager();
+        initRecorderManager();
         recorderManager.SetDate(dateNow);
         recorderManager.startRecorder(recordFileName);
         //wavRecorder = new TestWavRecorder(Environment.getExternalStorageDirectory()
@@ -251,6 +259,10 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         buttonRec.setEnabled(true);
         buttonRec.setVisibility(View.VISIBLE);
+
+        buttonConfig.setEnabled(true);
+        buttonConfig.setVisibility(View.VISIBLE);
+
         buttonStop.setEnabled(false);
         buttonStop.setVisibility(View.INVISIBLE);
 
@@ -315,7 +327,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     @Override
     protected void onResume(){
-        InitRecorderManager();
+        initRecorderManager();
         super.onResume();
     }
 

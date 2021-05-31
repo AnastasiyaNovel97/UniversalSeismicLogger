@@ -1,9 +1,0 @@
-<changelist name="Uncommitted_changes_before_Update_at_13_05_2021_2_08_[Default_Changelist]" date="1620846508051" recycled="true" deleted="true">
-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_13_05_2021_2_08_[Default_Changelist]/shelved.patch" />
-  <option name="DESCRIPTION" value="Uncommitted changes before Update at 13.05.2021 2:08 [Default Changelist]" />
-  <binary>
-    <option name="BEFORE_PATH" />
-    <option name="AFTER_PATH" value="app/src/main/assets/dnn_model.tflite" />
-    <option name="SHELVED_PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_13_05_2021_2_08_[Default_Changelist]/dnn_model.tflite" />
-  </binary>
-</changelist>

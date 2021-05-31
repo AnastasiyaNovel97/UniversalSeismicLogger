@@ -26,9 +26,9 @@ public class RecorderMic implements IRecorder, ITraceable {
 
     private Context parentContext;
     private volatile boolean isFileSaved = false;
-    private String recordFileName;
-    private String recordFilePath;
-    private String recordFullPath;
+    private volatile String recordFileName;
+    private volatile String recordFilePath;
+    private volatile String recordFullPath;
     private volatile boolean isReading = false;
     private File recordFile;
     private int samplesRead;
@@ -97,7 +97,7 @@ public class RecorderMic implements IRecorder, ITraceable {
     private void stopWriteAudioDataToFile(){
         try {
             fOutputStream.close();
-
+ 
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -138,8 +138,18 @@ public class RecorderMic implements IRecorder, ITraceable {
 
     private void AudioRecordInitialization(int sampleRate, int channelConfig, int audioFormat,
                                            int internalBufferSize){
-        audioRecord = new AudioRecord(audioSource,
-                sampleRate, channelConfig, audioFormat, internalBufferSize);
+        try {
+            audioRecord = new AudioRecord(audioSource,
+                    sampleRate, channelConfig, audioFormat, internalBufferSize);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+        finally {
+            if(audioRecord.getRecordingState() == AudioRecord.STATE_UNINITIALIZED){
+                AudioRecordInitialization(sampleRate, channelConfig, audioFormat, internalBufferSize);
+            }
+        }
     }
 
     @Override

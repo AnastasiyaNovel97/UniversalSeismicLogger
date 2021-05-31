@@ -95,7 +95,7 @@ public class RecorderManager implements IRecorder, IRecorderReceiver {
 
     @Override
     public void startRecorder(String fileName) {
-        initRecorders();
+        //initRecorders();
         isReading = true;
         String outPath = generateOutFilePath(fileName);
         for (IRecorder recorder :
