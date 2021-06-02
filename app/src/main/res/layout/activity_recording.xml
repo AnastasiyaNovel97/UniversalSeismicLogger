@@ -7,6 +7,15 @@
     android:orientation="vertical"
     tools:context=".activities.RecordingActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme" />
+
     <Space
         android:layout_width="wrap_content"
         android:layout_height="10dp"
@@ -83,7 +92,7 @@
 
     <Space
         android:layout_width="match_parent"
-        android:layout_height="80dp" />
+        android:layout_height="73dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
