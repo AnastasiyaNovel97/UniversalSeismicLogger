@@ -31,6 +31,7 @@ import static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;
 
 public class RecorderOrientationSensors implements IRecorder, IRecorderTransmitter, ITraceable, SensorEventListener {
 
+    private RecorderValue recorderValue = RecorderValue.GetInstance();
     private SensorManager sensorManager;
     private Sensor sensor;
 
@@ -204,6 +205,11 @@ public class RecorderOrientationSensors implements IRecorder, IRecorderTransmitt
                 line+='\n';
                 dataOutputStream.write(line.getBytes());
                 samplesRead++;
+                if(recorderId == ACCELEROMETER_ID){
+                    float[] values = sensorEvent.values;
+                    //float resVal = (float)Math.sqrt(values[0]*values[0]+values[1]*values[1]+values[2]*values[2]);
+                    recorderValue.SetValue((float)Math.sqrt(values[0]*values[0]+values[1]*values[1]+values[2]*values[2]));
+                }
             }
         }
         catch (ArrayIndexOutOfBoundsException | IOException aioobe){

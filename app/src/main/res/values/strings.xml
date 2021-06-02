@@ -27,5 +27,6 @@
     <string name="file_saved_at_path">File is saved at path:</string>
     <string name="config_button">Config</string>
     <string name="back_button">Back</string>
+    <string name="open_file_button">Open record folder</string>
 
 </resources>

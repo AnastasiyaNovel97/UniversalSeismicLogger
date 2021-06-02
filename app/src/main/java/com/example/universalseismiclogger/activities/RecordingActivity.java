@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 
 import android.os.Handler;
@@ -16,6 +17,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +38,7 @@ import com.example.universalseismiclogger.filescanner.FileScanner;
 import com.example.universalseismiclogger.locationprovider.GpsLocationProvider;
 import com.example.universalseismiclogger.permissions.PermissionRequester;
 import com.example.universalseismiclogger.recorder.RecorderManager;
+import com.example.universalseismiclogger.recorder.RecorderValue;
 import com.example.universalseismiclogger.shared.ITraceable;
 import com.instacart.library.truetime.TrueTime;
 
@@ -56,6 +59,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     private Button buttonConfig;
     private TextView textViewRec;       // Shows elapsed time of record
     private TextView textViewCurrentTime;
+    private ProgressBar progressBar;
 
     private Date dateNow;
 
@@ -68,6 +72,8 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     private long startTime = 0L;        // start time of measuring
     private long timeInMilliseconds = 0L;
+
+    private RecorderValue recorderValue = RecorderValue.GetInstance();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -185,8 +191,11 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         ((TextView) findViewById(R.id.textViewPath)).setText(getString(R.string.record_folder_path) + BASE_FOLDER_PATH);
 
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+
         customHandler.post(updateCurrentTime);
         customHandler.post(updateCurrentLocation);
+        customHandler.post(updateLoudBar);
 
     }
 
@@ -317,6 +326,26 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         }
     };
 
+    float loudMin = 0;
+    float loudMax= 10f;
+    private final Runnable updateLoudBar = new Runnable() {
+        public void run() {
+            float value = recorderValue.GetValue();
+
+//            if(value > loudMax){
+//                loudMax = value;
+//            }
+//            else if(value < loudMin){
+//                loudMin = value;
+//            }
+
+            int progress = (int)(value/loudMax)*100;
+
+            progressBar.setProgress(progress);
+            customHandler.postDelayed(this, 50);
+        }
+    };
+
     @Override
     protected void onPause(){
         if(isRecording){
@@ -338,5 +367,16 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         super.onDestroy();
     }
 
+    public void open_file_button(View v){
+        Uri folder = Uri.parse(BASE_FOLDER_PATH);
+        Intent myIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        myIntent.setType("*/*");
+        startActivityForResult(myIntent,228);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 
 }

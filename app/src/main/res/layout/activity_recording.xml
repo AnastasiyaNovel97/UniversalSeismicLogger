@@ -159,7 +159,19 @@
 
     <Space
         android:layout_width="match_parent"
-        android:layout_height="128dp" />
+        android:layout_height="20dp"
+        android:layout_weight="0" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_weight="0" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="90dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -183,10 +195,11 @@
     </LinearLayout>
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/buttonFileOpen"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0"
-        android:text="Button" />
+        android:onClick="open_file_button"
+        android:text="@string/open_file_button" />
 
 </LinearLayout>

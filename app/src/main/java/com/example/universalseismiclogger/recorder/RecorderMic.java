@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.util.Log;
 
@@ -97,7 +98,7 @@ public class RecorderMic implements IRecorder, ITraceable {
     private void stopWriteAudioDataToFile(){
         try {
             fOutputStream.close();
- 
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -246,5 +247,6 @@ public class RecorderMic implements IRecorder, ITraceable {
     public int getRecorderType() {
         return MICROPHONE_ID;
     }
+
 
 }
