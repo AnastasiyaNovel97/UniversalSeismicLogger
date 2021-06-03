@@ -1,6 +1,12 @@
 package com.example.universalseismiclogger.activities;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.ui.AppBarConfiguration;
+import androidx.navigation.ui.NavigationUI;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -14,6 +20,8 @@ import android.os.Message;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -40,12 +48,15 @@ import com.example.universalseismiclogger.permissions.PermissionRequester;
 import com.example.universalseismiclogger.recorder.RecorderManager;
 import com.example.universalseismiclogger.recorder.RecorderValue;
 import com.example.universalseismiclogger.shared.ITraceable;
+import com.google.android.material.navigation.NavigationView;
 import com.instacart.library.truetime.TrueTime;
 
 import static com.example.universalseismiclogger.shared.DefaultStrings.*;
 import static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;
 
 public class RecordingActivity extends AppCompatActivity implements ITraceable {
+
+    private AppBarConfiguration mAppBarConfiguration;
 
     private static final int CONFIG_REQUEST_CODE = 1;
 
@@ -78,7 +89,26 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_recording);
+
+        //setContentView(R.layout.activity_recording);
+
+        ////////////////////////////////////////////
+        setContentView(R.layout.activity_test_nav);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        // Passing each menu ID as a set of Ids because each
+        // menu should be considered as top level destinations.
+        mAppBarConfiguration = new AppBarConfiguration.Builder(
+                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
+                .setDrawerLayout(drawer)
+                .build();
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
+        NavigationUI.setupWithNavController(navigationView, navController);
+        ////////////////////////////////////////////
 
         getWindow().addFlags((WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
 
@@ -104,6 +134,20 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
             success = folder.mkdirs();
         }
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.test_nav, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+        return NavigationUI.navigateUp(navController, mAppBarConfiguration)
+                || super.onSupportNavigateUp();
     }
 
     private void initRecorderManager() {
@@ -193,7 +237,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
 
-        customHandler.post(updateCurrentTime);
+        //customHandler.post(updateCurrentTime);
         customHandler.post(updateCurrentLocation);
         customHandler.post(updateLoudBar);
 
@@ -217,6 +261,12 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     }
 
     public void onConfigClick(View view){
+        Intent configIntent = new Intent(this, ConfigActivity.class);
+        startActivity(configIntent);
+    }
+
+    public void onMenuConfigClick(MenuItem item){
+        //onConfigClick(new View(this));
         Intent configIntent = new Intent(this, ConfigActivity.class);
         startActivity(configIntent);
     }
@@ -368,10 +418,13 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     }
 
     public void open_file_button(View v){
-        Uri folder = Uri.parse(BASE_FOLDER_PATH);
-        Intent myIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        myIntent.setType("*/*");
-        startActivityForResult(myIntent,228);
+//        Uri folder = Uri.parse(BASE_FOLDER_PATH);
+//        Intent myIntent = new Intent(Intent.ACTION_GET_CONTENT);
+//        myIntent.setType("*/*");
+//        startActivityForResult(myIntent,228);
+
+        startActivity(new Intent(this, TestNavActivity.class));
+
     }
 
     @Override
