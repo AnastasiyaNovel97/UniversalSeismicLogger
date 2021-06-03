@@ -7,16 +7,19 @@
     android:orientation="vertical"
     tools:context=".activities.RecordingActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_weight="0"
-        android:background="@drawable/mautins"
-        android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme"
-        app:buttonGravity="top|center_vertical|bottom" />
+<!--<<<<<<< HEAD-->
+<!--    <androidx.appcompat.widget.Toolbar-->
+<!--        android:id="@+id/toolbar"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="50dp"-->
+<!--        android:layout_weight="0"-->
+<!--        android:background="@drawable/mautins"-->
+<!--        android:minHeight="?attr/actionBarSize"-->
+<!--        android:theme="?attr/actionBarTheme"-->
+<!--        app:buttonGravity="top|center_vertical|bottom" />-->
 
+<!--=======-->
+<!--&gt;>>>>>> d6e1acd52e18fd05121f31158b1a4231667cea81-->
     <Space
         android:layout_width="wrap_content"
         android:layout_height="10dp"
@@ -203,14 +206,6 @@
             android:layout_width="20dp"
             android:layout_height="wrap_content" />
     </LinearLayout>
-
-    <Button
-        android:id="@+id/buttonFileOpen"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0"
-        android:onClick="open_file_button"
-        android:text="@string/open_file_button" />
 
     <fragment
         android:id="@+id/nav_host_fragment"

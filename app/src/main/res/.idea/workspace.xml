@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="55ad7e8c-84bb-46f4-bce8-aaedd5665ee7" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../../../../.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/../../../build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../java/com/example/universalseismiclogger/activities/RecordingActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../java/com/example/universalseismiclogger/activities/RecordingActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../java/com/example/universalseismiclogger/activities/TestNavActivity.java" beforeDir="false" afterPath="$PROJECT_DIR$/../java/com/example/universalseismiclogger/activities/TestNavActivity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/layout/activity_test_nav.xml" beforeDir="false" afterPath="$PROJECT_DIR$/layout/activity_test_nav.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../.." />
+  </component>
+  <component name="ProjectId" id="1tS35siqz6985Qzd0lBQFT0ckaj" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="android.sdk.path" value="$PROJECT_DIR$/../../../../../../Users/artem/androidSDK" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../../../FlowingDrawer-master" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="55ad7e8c-84bb-46f4-bce8-aaedd5665ee7" name="Default Changelist" comment="" />
+      <created>1622748482997</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1622748482997</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="463" y="118" key="FileChooserDialogImpl" timestamp="1622751399729">
+      <screen x="0" y="0" width="1366" height="728" />
+    </state>
+    <state x="463" y="118" key="FileChooserDialogImpl/0.0.1366.728/1366.-329.1280.984@0.0.1366.728" timestamp="1622751399729" />
+  </component>
+</project>

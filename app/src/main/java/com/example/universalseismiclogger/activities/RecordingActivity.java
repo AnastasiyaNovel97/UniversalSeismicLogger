@@ -50,6 +50,8 @@ import com.example.universalseismiclogger.recorder.RecorderValue;
 import com.example.universalseismiclogger.shared.ITraceable;
 import com.google.android.material.navigation.NavigationView;
 import com.instacart.library.truetime.TrueTime;
+import com.mxn.soul.flowingdrawer_core.ElasticDrawer;
+import com.mxn.soul.flowingdrawer_core.FlowingDrawer;
 
 import static com.example.universalseismiclogger.shared.DefaultStrings.*;
 import static com.example.universalseismiclogger.shared.LogTags.MY_LOGS;
@@ -85,6 +87,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     private long timeInMilliseconds = 0L;
 
     private RecorderValue recorderValue = RecorderValue.GetInstance();
+    private FlowingDrawer mDrawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,23 +95,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         //setContentView(R.layout.activity_recording);
 
-        ////////////////////////////////////////////
-        setContentView(R.layout.activity_test_nav);
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.nav_view);
-        // Passing each menu ID as a set of Ids because each
-        // menu should be considered as top level destinations.
-        mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
-                .setDrawerLayout(drawer)
-                .build();
-        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
-        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
-        NavigationUI.setupWithNavController(navigationView, navController);
-        ////////////////////////////////////////////
+        InitLayoutAndDrawer();
 
         getWindow().addFlags((WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON));
 
@@ -135,6 +122,45 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         }
 
     }
+
+    private void InitLayoutAndDrawer(){
+
+        setContentView(R.layout.activity_test_nav);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        mDrawer = (FlowingDrawer) findViewById(R.id.drawerlayout);
+        mDrawer.setTouchMode(ElasticDrawer.TOUCH_MODE_BEZEL);
+        mDrawer.setOnDrawerStateChangeListener(new ElasticDrawer.OnDrawerStateChangeListener() {
+            @Override
+            public void onDrawerStateChange(int oldState, int newState) {
+                if (newState == ElasticDrawer.STATE_CLOSED) {
+                    Log.i("MainActivity", "Drawer STATE_CLOSED");
+                }
+            }
+
+            @Override
+            public void onDrawerSlide(float openRatio, int offsetPixels) {
+                Log.i("MainActivity", "openRatio=" + openRatio + " ,offsetPixels=" + offsetPixels);
+            }
+        });
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+//        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawerlayout);
+//        NavigationView navigationView = findViewById(R.id.nav_view);
+////         Passing each menu ID as a set of Ids because each
+////         menu should be considered as top level destinations.
+//        getSupportActionBar().setHomeButtonEnabled(true);
+//        mAppBarConfiguration = new AppBarConfiguration.Builder(
+//                R.id.nav_home, R.id.nav_gallery, R.id.nav_slideshow)
+//                .setDrawerLayout(drawer)
+//                .build();
+//        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
+//        NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
+//        NavigationUI.setupWithNavController(navigationView, navController);
+
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
