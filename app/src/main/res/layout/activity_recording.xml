@@ -10,11 +10,12 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:layout_weight="0"
-        android:background="?attr/colorPrimary"
+        android:background="@drawable/mautins"
         android:minHeight="?attr/actionBarSize"
-        android:theme="?attr/actionBarTheme" />
+        android:theme="?attr/actionBarTheme"
+        app:buttonGravity="top|center_vertical|bottom" />
 
     <Space
         android:layout_width="wrap_content"

@@ -16,8 +16,8 @@
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar8"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
+            android:layout_height="50dp"
+            android:background="@drawable/mautins"
             android:minHeight="?attr/actionBarSize"
             android:theme="?attr/actionBarTheme" />
 
@@ -82,7 +82,10 @@
                 android:layout_weight="1"
                 android:ems="10"
                 android:inputType="textPersonName"
-                android:text="Rec" />
+                android:text="Rec"
+                android:textColorHighlight="@color/enable_thumb_green"
+                android:textColorLink="@color/colorPrimaryDark"
+                android:textCursorDrawable="@color/colorPrimary" />
 
         </LinearLayout>
 
@@ -104,7 +107,8 @@
                 android:enabled="false"
                 android:text="@string/switch_use_mic"
                 android:textSize="18sp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                android:theme="@style/SCBSwitch" />
         </LinearLayout>
 
         <LinearLayout
@@ -123,7 +127,8 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="@string/switch_audio_resource"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:theme="@style/SCBSwitch"/>
         </LinearLayout>
 
         <LinearLayout
@@ -142,7 +147,8 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="@string/switch_use_gyroscope"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:theme="@style/SCBSwitch" />
         </LinearLayout>
 
         <LinearLayout
@@ -161,7 +167,8 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="@string/switch_use_accelerometer"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:theme="@style/SCBSwitch" />
         </LinearLayout>
 
         <LinearLayout
@@ -180,7 +187,8 @@
                 android:layout_weight="1"
                 android:checked="true"
                 android:text="@string/switch_use_compass"
-                android:textSize="18sp" />
+                android:textSize="18sp"
+                android:theme="@style/SCBSwitch" />
 
         </LinearLayout>
 
@@ -190,17 +198,22 @@
             android:orientation="horizontal">
 
             <Space
-                android:layout_width="178dp"
+                android:layout_width="155dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1" />
+                android:layout_weight="0" />
 
             <Button
                 android:id="@+id/button_back"
-                android:layout_width="128dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:onClick="onBackClick"
-                android:text="@string/back_button" />
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_weight="0"
+                android:background="@drawable/ok"
+                android:onClick="onBackClick" />
+
+            <Space
+                android:layout_width="155dp"
+                android:layout_height="match_parent"
+                android:layout_weight="0" />
 
         </LinearLayout>
 
