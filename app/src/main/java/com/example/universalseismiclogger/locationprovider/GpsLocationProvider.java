@@ -14,7 +14,10 @@ import android.os.Message;
 
 import androidx.core.app.ActivityCompat;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Calendar;
+import java.util.Locale;
 
 import static com.example.universalseismiclogger.shared.DefaultStrings.GPS_LOCATION;
 import static com.example.universalseismiclogger.shared.DefaultStrings.GPS_LOCATION_DEFAULT;
@@ -26,6 +29,8 @@ public class GpsLocationProvider implements LocationListener {
     public Handler mHandler;
 
     private Context activityContext;
+
+    private DecimalFormat df = new DecimalFormat("###.#####", DecimalFormatSymbols.getInstance(Locale.US));
 
     public boolean IsLocationGet(){
         return locationGet;
@@ -52,7 +57,7 @@ public class GpsLocationProvider implements LocationListener {
             //if the recent location calculated earlier than 120 seconds ago
             if(location != null && location.getTime() > Calendar.getInstance().getTimeInMillis() - 2 * 60 * 1000) {
                 SharedPreferences.Editor configEditor = config.edit();
-                configEditor.putString(GPS_LOCATION, location.getLatitude() + " " + location.getLongitude());
+                configEditor.putString(GPS_LOCATION, df.format(location.getLatitude()) + " " + df.format(location.getLongitude()));
                 configEditor.apply();
                 locationGet = true;
                 Looper.myLooper().quitSafely();
