@@ -17,10 +17,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity android:name=".InfoActivity"></activity>
         <activity
             android:name=".activities.TestNavActivity"
             android:label="@string/title_activity_test_nav"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:theme="@style/AppTheme.NoActionBar" />
         <activity
             android:name=".activities.RecordingActivity"
             android:screenOrientation="portrait">
