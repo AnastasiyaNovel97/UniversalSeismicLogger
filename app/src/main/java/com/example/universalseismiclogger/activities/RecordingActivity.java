@@ -3,6 +3,7 @@ package com.example.universalseismiclogger.activities;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -72,7 +73,6 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     private Button buttonConfig;
     private TextView textViewRec;       // Shows elapsed time of record
     private TextView textViewCurrentTime;
-    private ProgressBar progressBar;
 
     private Date dateNow;
 
@@ -86,7 +86,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     private long startTime = 0L;        // start time of measuring
     private long timeInMilliseconds = 0L;
 
-    private RecorderValue recorderValue = RecorderValue.GetInstance();
+
     private FlowingDrawer mDrawer;
 
     @Override
@@ -261,11 +261,8 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
         ((TextView) findViewById(R.id.textViewPath)).setText(getString(R.string.record_folder_path) + BASE_FOLDER_PATH);
 
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
-
         //customHandler.post(updateCurrentTime);
         customHandler.post(updateCurrentLocation);
-        customHandler.post(updateLoudBar);
 
     }
 
@@ -299,6 +296,9 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     // Starts audio recording
     public void onRecordClick(View view){
+
+        RealtimeUpdates rtu = (RealtimeUpdates) getSupportFragmentManager().findFragmentById(R.id.fragmentGraph);
+        rtu.generateData();
 
         isRecording = true;
 
@@ -402,25 +402,25 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         }
     };
 
-    float loudMin = 0;
-    float loudMax= 10f;
-    private final Runnable updateLoudBar = new Runnable() {
-        public void run() {
-            float value = recorderValue.GetValue();
-
-//            if(value > loudMax){
-//                loudMax = value;
-//            }
-//            else if(value < loudMin){
-//                loudMin = value;
-//            }
-
-            int progress = (int)(value/loudMax)*100;
-
-            progressBar.setProgress(progress);
-            customHandler.postDelayed(this, 50);
-        }
-    };
+//    float loudMin = 0;
+//    float loudMax= 10f;
+//    private final Runnable updateLoudBar = new Runnable() {
+//        public void run() {
+//            float value = recorderValue.GetValue();
+//
+////            if(value > loudMax){
+////                loudMax = value;
+////            }
+////            else if(value < loudMin){
+////                loudMin = value;
+////            }
+//
+//            int progress = (int)(value/loudMax)*100;
+//
+//            progressBar.setProgress(progress);
+//            customHandler.postDelayed(this, 50);
+//        }
+//    };
 
     @Override
     protected void onPause(){
@@ -456,6 +456,10 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    public void onSectionAttached(){
+
     }
 
 }

@@ -175,21 +175,11 @@
         android:layout_height="20dp"
         android:layout_weight="0" />
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="30dp"
-        android:layout_weight="0" />
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="90dp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:visibility="gone">
 
         <Space
             android:layout_width="20dp"
@@ -206,6 +196,23 @@
             android:layout_width="20dp"
             android:layout_height="wrap_content" />
     </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:orientation="horizontal">
+
+        <fragment
+            android:id="@+id/fragmentGraph"
+            android:name="com.example.universalseismiclogger.activities.RealtimeUpdates"
+            android:layout_width="match_parent"
+            android:layout_height="300dp" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="90dp" />
 
     <fragment
         android:id="@+id/nav_host_fragment"
