@@ -76,6 +76,8 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     private Date dateNow;
 
+    RealtimeUpdates realtimeUpdates;
+
     //private RecorderMicToWav recorderMicToWav;
     private RecorderManager recorderManager = new RecorderManager();
 
@@ -114,6 +116,9 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         getGpsLocation();
 
         initRecorderManager();
+
+        realtimeUpdates = (RealtimeUpdates) getSupportFragmentManager().findFragmentById(R.id.fragmentGraph);
+        realtimeUpdates.generateData();
 
         File folder = new File(BASE_FOLDER_PATH);
         boolean success = true;
@@ -297,10 +302,10 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     // Starts audio recording
     public void onRecordClick(View view){
 
-        RealtimeUpdates rtu = (RealtimeUpdates) getSupportFragmentManager().findFragmentById(R.id.fragmentGraph);
-        rtu.generateData();
+
 
         isRecording = true;
+
 
         if (TrueTime.isInitialized())
             dateNow = TrueTime.now();
@@ -327,6 +332,7 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         initRecorderManager();
         recorderManager.SetDate(dateNow);
         recorderManager.startRecorder(recordFileName);
+        realtimeUpdates.StartShow();
         //wavRecorder = new TestWavRecorder(Environment.getExternalStorageDirectory()
         // + "/UniversalSeismicLogger/"+recordFileName);
         //wavRecorder.startRecording();
@@ -339,6 +345,8 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         isRecording = false;
         startTime = 0L;
         customHandler.removeCallbacks(updateTimerThread);
+        textViewRec.setText("0:00:000");
+
 
         recorderManager.stopRecorder();
 
@@ -359,6 +367,8 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
         //Toast.makeText(this, fileSavedAtPath, Toast.LENGTH_SHORT).show();
         Toast.makeText(this, fileSavedAtPath + " " + BASE_FOLDER_PATH
                 + recorderManager.getFilePath() + "/", Toast.LENGTH_LONG).show();
+        realtimeUpdates.StopShow();
+
 
     }
 

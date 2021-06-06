@@ -21,12 +21,20 @@ import java.util.Vector;
 
 public class RealtimeUpdates extends Fragment {
     private final Handler mHandler = new Handler();
-    private Runnable mTimer1;
     private LineGraphSeries<DataPoint> mSeries1;
 
     private RecorderValue recorderValue = RecorderValue.GetInstance();
     private int dataPointNumber = 50;
     private Vector<DataPoint> pointVector = new Vector<DataPoint>();
+
+    private Runnable mTimer1 = new Runnable() {
+        @Override
+        public void run() {
+
+            mSeries1.resetData(updateData());
+            mHandler.postDelayed(this, 100);
+        }
+    };
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -56,16 +64,11 @@ public class RealtimeUpdates extends Fragment {
     public void onResume() {
         super.onResume();
         generateData();
-        mTimer1 = new Runnable() {
-            @Override
-            public void run() {
 
-                mSeries1.resetData(updateData());
-                mHandler.postDelayed(this, 100);
-            }
-        };
-        mHandler.postDelayed(mTimer1, 300);
+
     }
+
+
 
     @Override
     public void onPause() {
@@ -87,5 +90,16 @@ public class RealtimeUpdates extends Fragment {
             pointVector.add(new DataPoint(i,0));
         }
     }
+
+    public void StartShow(){
+        mHandler.postDelayed(mTimer1, 300);
+    }
+
+    public void StopShow(){
+        mHandler.removeCallbacks(mTimer1);
+    }
+
+
+
 
 }
