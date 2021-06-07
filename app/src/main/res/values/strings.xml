@@ -41,5 +41,7 @@
     <string name="menu_folder">Folder</string>
     <string name="menu_information">Information</string>
     <string name="menu_share">Share</string>
+    <string name="menu_rate">Rate the app</string>
+    <string name="communicate">Communicate</string>
 
 </resources>

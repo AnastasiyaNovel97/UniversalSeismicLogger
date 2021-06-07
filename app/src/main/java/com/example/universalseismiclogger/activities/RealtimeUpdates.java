@@ -44,7 +44,7 @@ public class RealtimeUpdates extends Fragment {
         GraphView graph = (GraphView) rootView.findViewById(R.id.graph);
         graph.getViewport().setYAxisBoundsManual(true);
         graph.getViewport().setMinY(7);
-        graph.getViewport().setMaxY(12);
+        graph.getViewport().setMaxY(13);
 
         generateData();
         mSeries1 = new LineGraphSeries<>(updateData());

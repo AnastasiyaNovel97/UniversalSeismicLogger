@@ -19,7 +19,7 @@
 
     </group>
 
-    <item android:title="Communicate">
+    <item android:title="@string/communicate">
         <menu>
             <item
                 android:id="@+id/nav_information"
@@ -29,6 +29,10 @@
                 android:id="@+id/nav_share"
                 android:icon="?attr/actionModeShareDrawable"
                 android:title="@string/menu_share" />
+            <item
+                android:id="@+id/nav_rate"
+                android:icon="@drawable/star"
+                android:title="@string/menu_rate" />
         </menu>
     </item>
 

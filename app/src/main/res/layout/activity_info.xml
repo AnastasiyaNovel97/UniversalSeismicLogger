@@ -6,4 +6,11 @@
     android:layout_height="match_parent"
     tools:context=".InfoActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar2"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/mautins"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme" />
 </androidx.constraintlayout.widget.ConstraintLayout>
