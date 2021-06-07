@@ -92,7 +92,7 @@ public class RealtimeUpdates extends Fragment {
     }
 
     public void StartShow(){
-        mHandler.postDelayed(mTimer1, 300);
+        mHandler.post(mTimer1);
     }
 
     public void StopShow(){

@@ -30,6 +30,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.universalseismiclogger.InfoActivity;
 import com.example.universalseismiclogger.R;
 
 import java.io.File;
@@ -372,6 +373,37 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     }
 
+    public void onMenuButtonClick(MenuItem v){
+
+        if(v.getItemId() == R.id.nav_recording){
+            Toast.makeText(this,"You are already here!",Toast.LENGTH_LONG).show();
+        }
+
+        else if(v.getItemId() == R.id.nav_settings){
+            onConfigClick(new View(this));
+        }
+
+        else if(v.getItemId() == R.id.nav_folder){
+            open_file_button(new View(this));
+        }
+
+        else if(v.getItemId() == R.id.nav_information){
+            startActivity(new Intent(this, InfoActivity.class));
+        }
+
+        else if(v.getItemId() == R.id.nav_share){
+            Toast.makeText(this,"Not implemented yet",Toast.LENGTH_SHORT).show();
+        }
+
+        else if(v.getItemId() == R.id.nav_rate){
+            Toast.makeText(this,"Not implemented yet",Toast.LENGTH_SHORT).show();
+        }
+
+        else {
+            Toast.makeText(this,"Wrong button!",Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
     private final Runnable updateCurrentTime = new Runnable() {
         @SuppressLint({"SetTextI18n", "DefaultLocale"})
@@ -454,12 +486,12 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
     }
 
     public void open_file_button(View v){
-//        Uri folder = Uri.parse(BASE_FOLDER_PATH);
-//        Intent myIntent = new Intent(Intent.ACTION_GET_CONTENT);
-//        myIntent.setType("*/*");
-//        startActivityForResult(myIntent,228);
+        Uri folder = Uri.parse(BASE_FOLDER_PATH);
+        Intent myIntent = new Intent(Intent.ACTION_GET_CONTENT);
+        myIntent.setType("*/*");
+        startActivityForResult(myIntent,228);
 
-        startActivity(new Intent(this, TestNavActivity.class));
+        //startActivity(new Intent(this, TestNavActivity.class));
 
     }
 

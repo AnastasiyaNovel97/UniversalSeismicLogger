@@ -3,18 +3,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-    <group android:checkableBehavior="single">
+    <group >
         <item
             android:id="@+id/nav_recording"
             android:icon="@drawable/record"
+            android:onClick="onMenuButtonClick"
             android:title="@string/menu_recording" />
         <item
             android:id="@+id/nav_settings"
             android:icon="@drawable/settings"
+            android:onClick="onMenuButtonClick"
             android:title="@string/menu_settings" />
         <item
             android:id="@+id/nav_folder"
             android:icon="@drawable/folder"
+            android:onClick="onMenuButtonClick"
             android:title="@string/menu_folder" />
 
     </group>
@@ -24,14 +27,17 @@
             <item
                 android:id="@+id/nav_information"
                 android:icon="@drawable/help"
+                android:onClick="onMenuButtonClick"
                 android:title="@string/menu_information" />
             <item
                 android:id="@+id/nav_share"
                 android:icon="?attr/actionModeShareDrawable"
+                android:onClick="onMenuButtonClick"
                 android:title="@string/menu_share" />
             <item
                 android:id="@+id/nav_rate"
                 android:icon="@drawable/star"
+                android:onClick="onMenuButtonClick"
                 android:title="@string/menu_rate" />
         </menu>
     </item>
