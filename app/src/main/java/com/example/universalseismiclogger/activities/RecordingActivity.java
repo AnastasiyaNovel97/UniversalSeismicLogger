@@ -375,11 +375,11 @@ public class RecordingActivity extends AppCompatActivity implements ITraceable {
 
     public void onMenuButtonClick(MenuItem v){
 
-        if(v.getItemId() == R.id.nav_recording){
-            Toast.makeText(this,"You are already here!",Toast.LENGTH_LONG).show();
-        }
+        //if(v.getItemId() == R.id.nav_recording){
+          //  Toast.makeText(this,"You are already here!",Toast.LENGTH_LONG).show();
+        //}
 
-        else if(v.getItemId() == R.id.nav_settings){
+         if(v.getItemId() == R.id.nav_settings){
             onConfigClick(new View(this));
         }
 
